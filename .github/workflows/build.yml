@@ -28,5 +28,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fakeplayer-jar
-          path: target/lib/*.jar
+          path: target/libs/*.jar
           if-no-files-found: ignore
