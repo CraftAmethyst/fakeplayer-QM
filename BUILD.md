@@ -1,12 +1,56 @@
-# Build introduction
+# Build / Dev Environment
 
-Here is a simple introduction lead you to build this project
+**Write by GPT**
 
-## Build NMS Dependencies
+## Prerequisites
 
-Mojang does not allow anyone to publish the remapped NMS jar to any public repository,
-so you need to build it yourself
+- JDK 21 (required for Gradle toolchain)
+- Git
+- Internet access for Gradle dependency resolution
 
-1. Download [BuildTools](https://www.spigotmc.org/wiki/buildtools/)
-2. execute `java -jar BuildTools.jar --rev 1.21 --remapped` to install remapped NMS 1.21 to your local repository. _You might need to install other version depending on projects' requirements._
+> The project compiles with `--release 17`, but the Gradle toolchain is set to JDK 21.
 
+## Setup
+
+1) Clone the repo and open it in your IDE as a Gradle project.  
+2) Set the Gradle JVM to JDK 21 (IntelliJ: Settings -> Build Tools -> Gradle -> Gradle JVM).  
+3) If you build from CLI, ensure `JAVA_HOME` points to JDK 21.
+
+## Build
+
+Windows:
+```
+gradlew.bat build
+```
+
+macOS / Linux:
+```
+./gradlew build
+```
+
+### Build the plugin jar
+
+```
+./gradlew :fakeplayer-dist:shadowJar
+```
+
+Output:
+- `target/fakeplayer-<version>.jar`
+
+## Optional: local Spigot remapped jar
+
+By default, Gradle will resolve Spigot from Maven. If you want to use a local jar instead:
+1) Run BuildTools for the target version.
+2) Put one of the following into `lib/`:
+   - `spigot-<mcVersion>-remapped-mojang.jar`
+   - `spigot-<mcVersion>.jar`
+
+Gradle will automatically pick it up if present.
+
+## Optional: copy to local test servers
+
+```
+./gradlew :fakeplayer-dist:copyToServers
+```
+
+This copies the built jar to `server-<version>/plugins/fakeplayer.jar` (folders are created if missing).
