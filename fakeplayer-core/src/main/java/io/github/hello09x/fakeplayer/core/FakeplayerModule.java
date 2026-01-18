@@ -18,6 +18,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import io.github.hello09x.fakeplayer.core.util.VersionUtils;
 
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
@@ -59,7 +60,7 @@ public class FakeplayerModule extends AbstractModule {
                 .orElse(null);
 
         if (bridge == null) {
-            throw new ExceptionInInitializerError("Unsupported Minecraft version: " + Bukkit.getMinecraftVersion());
+            throw new ExceptionInInitializerError("Unsupported Minecraft version: " + VersionUtils.getMinecraftVersion());
         }
         return bridge;
     }

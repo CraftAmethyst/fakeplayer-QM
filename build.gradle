@@ -115,6 +115,10 @@ subprojects {
     configurations.configureEach {
         attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
     }
+
+    dependencies {
+        compileOnly "org.jetbrains:annotations:24.1.0"
+    }
 }
 
 project(':fakeplayer-api') {

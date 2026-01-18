@@ -7,7 +7,6 @@ plugins {
 }
 
 dependencies {
-    compileOnly libs.io.papermc.paper.paper.api
     compileOnly libs.org.spigotmc.spigot.x9
     compileOnly libs.org.projectlombok.lombok
     compileOnly project(':fakeplayer-core')

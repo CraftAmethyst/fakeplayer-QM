@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import io.github.hello09x.fakeplayer.core.util.VersionUtils;
 
 import java.net.InetAddress;
 import java.util.Set;
@@ -44,7 +45,7 @@ public class NMSBridgeImpl implements NMSBridge {
 
     @Override
     public boolean isSupported() {
-        return SUPPORTS.contains(Bukkit.getMinecraftVersion());
+        return VersionUtils.isSupported(SUPPORTS);
     }
 
     @Override
