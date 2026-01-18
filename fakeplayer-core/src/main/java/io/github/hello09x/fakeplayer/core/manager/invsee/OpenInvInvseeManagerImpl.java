@@ -28,6 +28,13 @@ public class OpenInvInvseeManagerImpl extends AbstractInvseeManager {
 
     @Override
     protected InventoryView openInventory(@NotNull Player viewer, @NotNull Player whom) {
+        if (manager.isFake(whom)) {
+            var holder = new InvseeInventoryHolder(whom.getUniqueId());
+            var inv = Bukkit.createInventory(holder, 36);
+            holder.setInventory(inv);
+            inv.setContents(whom.getInventory().getStorageContents());
+            return viewer.openInventory(inv);
+        }
         try {
             return openInv.openInventory(viewer, openInv.getSpecialInventory(whom, true));
         } catch (InstantiationException e) {

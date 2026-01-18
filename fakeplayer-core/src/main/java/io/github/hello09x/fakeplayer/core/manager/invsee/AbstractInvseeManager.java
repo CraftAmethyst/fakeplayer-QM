@@ -3,17 +3,21 @@ package io.github.hello09x.fakeplayer.core.manager.invsee;
 import io.github.hello09x.devtools.core.utils.ComponentUtils;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerList;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.translatable;
@@ -77,5 +81,22 @@ public abstract class AbstractInvseeManager implements InvseeManager {
                 event.setCancelled(true);
             }
         }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void syncInvseeInventory(@NotNull InventoryCloseEvent event) {
+        var holder = event.getInventory().getHolder();
+        if (!(holder instanceof InvseeInventoryHolder invHolder)) {
+            return;
+        }
+
+        var target = Bukkit.getPlayer(invHolder.getTargetId());
+        if (target == null || !manager.isFake(target)) {
+            return;
+        }
+
+        var storageSize = target.getInventory().getStorageContents().length;
+        var contents = Arrays.copyOf(event.getInventory().getContents(), storageSize);
+        target.getInventory().setStorageContents(contents);
     }
 }
