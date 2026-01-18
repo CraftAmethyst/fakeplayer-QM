@@ -52,11 +52,11 @@ public class Tracer {
         var reachVec = source.getViewVector(partialTicks).scale(reach);
         var box = source.getBoundingBox().expandTowards(reachVec).inflate(1);
         return rayTraceEntities(source,
-                                pos,
-                                pos.add(reachVec),
-                                box,
-                                e -> !e.isSpectator() && e.isPickable(),
-                                maxSqDist);
+                pos,
+                pos.add(reachVec),
+                box,
+                e -> !e.isSpectator() && e.isPickable(),
+                maxSqDist);
     }
 
     public static @Nullable EntityHitResult rayTraceEntities(
@@ -90,9 +90,7 @@ public class Tracer {
                             target = current;
                             targetHitPos = currentHitPos;
                         }
-                    }
-                    else
-                    {
+                    } else {
                         target = current;
                         targetHitPos = currentHitPos;
                         targetDistance = currentDistance;

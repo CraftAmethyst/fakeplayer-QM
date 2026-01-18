@@ -204,14 +204,14 @@ public class FakeplayerConfig extends PluginConfig {
         this.namePrefix = file.getString("name-prefix", "");
         this.lifespan = getLifespan(file);
         this.allowCommands = file.getStringList("allow-commands")
-                                 .stream()
-                                 .map(c -> c.startsWith("/") ? c.substring(1) : c)
-                                 .filter(c -> !c.isBlank())
-                                 .collect(Collectors.toSet());
+                .stream()
+                .map(c -> c.startsWith("/") ? c.substring(1) : c)
+                .filter(c -> !c.isBlank())
+                .collect(Collectors.toSet());
 
         this.defaultOnlineSkin = file.getBoolean("default-online-skin", false);
         this.defaultFeatures = Arrays.stream(Feature.values())
-                                     .collect(Collectors.toMap(Function.identity(), key -> file.getString("default-features." + key.name(), key.getDefaultOption())));
+                .collect(Collectors.toMap(Function.identity(), key -> file.getString("default-features." + key.name(), key.getDefaultOption())));
         this.invseeImplement = ConfigUtils.getEnum(file, "invsee-implement", InvseeImplement.class, InvseeImplement.AUTO);
         this.debug = file.getBoolean("debug", false);
         this.nameStyleColor = this.getNameStyleColor(file);

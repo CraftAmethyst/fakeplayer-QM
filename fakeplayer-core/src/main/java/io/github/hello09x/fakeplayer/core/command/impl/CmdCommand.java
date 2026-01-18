@@ -22,6 +22,15 @@ public class CmdCommand extends AbstractCommand {
 
     private final Logger log = Main.getInstance().getLogger();
 
+    private static @NotNull String stringifyCommand(@NotNull CommandResult command) {
+        var builder = new StringBuilder("/");
+        builder.append(command.command().getName());
+        if (command.args() != null && command.args().length > 0) {
+            builder.append(" ").append(String.join(" ", command.args()));
+        }
+        return builder.toString();
+    }
+
     /**
      * 假人执行命令
      */
@@ -56,15 +65,6 @@ public class CmdCommand extends AbstractCommand {
         ));
 
         log.info("%s issued server command: %s".formatted(fake.getName(), stringifyCommand(command)));
-    }
-
-    private static @NotNull String stringifyCommand(@NotNull CommandResult command) {
-        var builder = new StringBuilder("/");
-        builder.append(command.command().getName());
-        if (command.args() != null && command.args().length > 0) {
-            builder.append(" ").append(String.join(" ", command.args()));
-        }
-        return builder.toString();
     }
 
 }

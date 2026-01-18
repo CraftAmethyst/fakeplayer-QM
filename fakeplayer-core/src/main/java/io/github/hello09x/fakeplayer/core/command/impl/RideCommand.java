@@ -76,10 +76,10 @@ public class RideCommand extends AbstractCommand {
     public void rideVehicle(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = getFakeplayer(sender, args);
         var entity = fake.getNearbyEntities(4.5, 4.5, 4.5)
-                         .stream()
-                         .filter(e -> e instanceof RideableMinecart || e instanceof Boat || e instanceof AbstractHorse)
-                         .findFirst()
-                         .orElse(null);
+                .stream()
+                .filter(e -> e instanceof RideableMinecart || e instanceof Boat || e instanceof AbstractHorse)
+                .findFirst()
+                .orElse(null);
 
         if (entity == null) {
             return;

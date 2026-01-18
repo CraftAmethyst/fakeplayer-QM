@@ -96,6 +96,7 @@ public interface NMSServerPlayer {
 
     /**
      * 获取 Z 坐标移动
+     *
      * @return Z 坐标移动
      */
     float getZza();
@@ -109,6 +110,7 @@ public interface NMSServerPlayer {
 
     /**
      * 获取 X 坐标移动
+     *
      * @return X 坐标移动
      */
     float getXxa();
@@ -122,6 +124,7 @@ public interface NMSServerPlayer {
 
     /**
      * 设置相对移动
+     *
      * @param vector 相对移动
      */
     void setDeltaMovement(@NotNull Vector vector);

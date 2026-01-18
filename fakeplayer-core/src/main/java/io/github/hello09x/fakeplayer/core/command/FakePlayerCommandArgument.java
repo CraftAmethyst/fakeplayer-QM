@@ -29,6 +29,8 @@ import java.util.LinkedHashMap;
  **/
 public class FakePlayerCommandArgument extends Argument<CommandResult> implements GreedyArgument {
 
+    SuggestionsBranch<CommandSender> replacements = SuggestionsBranch.suggest();
+
     /**
      * Constructs a {@link CommandArgument} with the given node name.
      *
@@ -126,8 +128,6 @@ public class FakePlayerCommandArgument extends Argument<CommandResult> implement
             return builder.buildFuture();
         });
     }
-
-    SuggestionsBranch<CommandSender> replacements = SuggestionsBranch.suggest();
 
     /**
      * Replaces the default command suggestions provided by the server with custom

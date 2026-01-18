@@ -23,8 +23,8 @@ import java.util.logging.Logger;
 
 public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerImpl implements NMSServerGamePacketListener {
 
-    private final FakeplayerManager manager = Main.getInjector().getInstance(FakeplayerManager.class);
     private final static Logger log = Main.getInstance().getLogger();
+    private final FakeplayerManager manager = Main.getInjector().getInstance(FakeplayerManager.class);
 
     public FakeServerGamePacketListenerImpl(
             @NotNull MinecraftServer server,

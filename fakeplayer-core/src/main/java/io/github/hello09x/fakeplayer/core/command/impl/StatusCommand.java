@@ -88,8 +88,8 @@ public class StatusCommand extends AbstractCommand {
     private @NotNull Component getHealthLine(@NotNull Player target) {
         var health = target.getHealth();
         double max = Optional.ofNullable(target.getAttribute(Attributes.maxHealth()))
-                             .map(AttributeInstance::getValue)
-                             .orElse(20D);
+                .map(AttributeInstance::getValue)
+                .orElse(20D);
 
         return translatable(
                 "fakeplayer.command.status.health",

@@ -29,9 +29,9 @@ public class FakeplayerSkinRepository {
     @CanIgnoreReturnValue
     public int insertOrUpdate(@NotNull FakePlayerSkin skin) {
         var sql = """
-                  insert or replace into fakeplayer_skin (player_id, creator_id, target_id)
-                  values (?, ?, ?)
-                  """;
+                insert or replace into fakeplayer_skin (player_id, creator_id, target_id)
+                values (?, ?, ?)
+                """;
 
         return jdbc.update(sql, skin.playerId().toString(), skin.creatorId().toString(), skin.targetId());
     }
@@ -47,15 +47,15 @@ public class FakeplayerSkinRepository {
 
     public void initTables() {
         this.jdbc.update("""
-                         create table if not exists fakeplayer_skin
-                         (
-                             player_id   text(36) not null,
-                             creator_id  text(36) not null,
-                             target_id   text(36) not null,
-                             constraint fakeplayer_skin_pk
-                                 primary key (player_id, creator_id)
-                         );
-                         """);
+                create table if not exists fakeplayer_skin
+                (
+                    player_id   text(36) not null,
+                    creator_id  text(36) not null,
+                    target_id   text(36) not null,
+                    constraint fakeplayer_skin_pk
+                        primary key (player_id, creator_id)
+                );
+                """);
     }
 
 }

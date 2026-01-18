@@ -39,7 +39,6 @@ public class FakeConnection extends Connection {
     }
 
 
-
     @Override
     public void send(Packet<?> packet) {
 

@@ -30,15 +30,15 @@ public class UserConfigRepository {
 
     public int saveOrUpdate(@NotNull UserConfig config) {
         var sql = """
-                  insert or replace into user_config(
-                      id, player_id, `key`, `value`
-                  ) values (
-                      (select id from user_config where player_id = ? and `key` = ?),
-                      ?,
-                      ?,
-                      ?
-                    )
-                  """;
+                insert or replace into user_config(
+                    id, player_id, `key`, `value`
+                ) values (
+                    (select id from user_config where player_id = ? and `key` = ?),
+                    ?,
+                    ?,
+                    ?
+                  )
+                """;
 
         return jdbc.update(sql, config.playerId().toString(), config.key().name(), config.playerId(), config.key().name(), config.value());
     }
@@ -50,18 +50,18 @@ public class UserConfigRepository {
 
     protected void initTables() {
         jdbc.execute("""
-                             create table if not exists user_config
-                                 (
-                                     id        integer  not null primary key autoincrement,
-                                     player_id text(36) not null,
-                                     `key`       text     not null,
-                                     `value`     text     not null
-                                 );
-                             """);
+                create table if not exists user_config
+                    (
+                        id        integer  not null primary key autoincrement,
+                        player_id text(36) not null,
+                        `key`       text     not null,
+                        `value`     text     not null
+                    );
+                """);
 
         jdbc.execute("""
-                             create unique index if not exists table_name_player_id_key_uindex
-                                        on user_config (player_id, `key`);
-                             """);
+                create unique index if not exists table_name_player_id_key_uindex
+                           on user_config (player_id, `key`);
+                """);
     }
 }

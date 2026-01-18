@@ -67,14 +67,14 @@ public class FakeplayerManager {
 
         this.lagMonitor = Executors.newSingleThreadScheduledExecutor();
         this.lagMonitor.scheduleWithFixedDelay(() -> {
-                                                   if (Bukkit.getServer().getTPS()[1] < config.getKaleTps()) {
-                                                       Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                                                           if (this.removeAll("low tps") > 0) {
-                                                               Bukkit.broadcast(translatable("fakeplayer.manager.remove-all-on-low-tps", GRAY, ITALIC));
-                                                           }
-                                                       });
-                                                   }
-                                               }, 0, 60, TimeUnit.SECONDS
+                    if (Bukkit.getServer().getTPS()[1] < config.getKaleTps()) {
+                        Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                            if (this.removeAll("low tps") > 0) {
+                                Bukkit.broadcast(translatable("fakeplayer.manager.remove-all-on-low-tps", GRAY, ITALIC));
+                            }
+                        });
+                    }
+                }, 0, 60, TimeUnit.SECONDS
         );
     }
 
@@ -175,15 +175,15 @@ public class FakeplayerManager {
      */
     public @Nullable CommandSender getCreator(@NotNull Player target) {
         return Optional.ofNullable(this.playerList.getByUUID(target.getUniqueId()))
-                       .map(Fakeplayer::getCreator)
-                       .map(creator -> {
-                           if (creator instanceof Player p) {
-                               return Bukkit.getPlayer(p.getUniqueId());
-                           } else {
-                               return creator;
-                           }
-                       })
-                       .orElse(null);
+                .map(Fakeplayer::getCreator)
+                .map(creator -> {
+                    if (creator instanceof Player p) {
+                        return Bukkit.getPlayer(p.getUniqueId());
+                    } else {
+                        return creator;
+                    }
+                })
+                .orElse(null);
     }
 
     /**

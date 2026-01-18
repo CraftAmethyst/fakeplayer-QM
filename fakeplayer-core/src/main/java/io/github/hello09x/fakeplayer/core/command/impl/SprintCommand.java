@@ -21,9 +21,9 @@ public class SprintCommand extends AbstractCommand {
     public void sprint(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = super.getFakeplayer(sender, args);
         var sprinting = (Boolean) args.getOptional("sprinting")
-                                      .map(String.class::cast)
-                                      .map(Boolean::valueOf)
-                                      .orElse(!fake.isSprinting());
+                .map(String.class::cast)
+                .map(Boolean::valueOf)
+                .orElse(!fake.isSprinting());
 
         var message = sprinting
                 ? translatable("fakeplayer.command.sprint.success.enabled", text(fake.getName(), WHITE)).color(GRAY)

@@ -19,12 +19,12 @@ public class InvseeInventoryHolder implements InventoryHolder {
         return targetId;
     }
 
-    public void setInventory(@NotNull Inventory inventory) {
-        this.inventory = inventory;
-    }
-
     @Override
     public @NotNull Inventory getInventory() {
         return inventory;
+    }
+
+    public void setInventory(@NotNull Inventory inventory) {
+        this.inventory = inventory;
     }
 }

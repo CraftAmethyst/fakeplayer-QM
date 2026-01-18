@@ -167,8 +167,8 @@ public class FakeplayerReplenishManager implements Listener {
 
             if (!this.replenishFromInventory(target, slot, requires)) {
                 if (Optional.ofNullable(manager.getCreator(target))
-                            .filter(creator -> creator.hasPermission(Permission.replenishFromChest))
-                            .isPresent()
+                        .filter(creator -> creator.hasPermission(Permission.replenishFromChest))
+                        .isPresent()
                 ) {
                     this.replenishFromNearbyChest(target, slot, requires);
                 }

@@ -54,14 +54,14 @@ public class SkinCommand extends AbstractCommand {
 
         try {
             this.manager.useOnlineSkinAsync(fake, player)
-                        .thenAcceptAsync(success -> {
-                            manager.rememberSkin(sender, fake, player);
-                            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                                if (success) {
-                                    fake.sendMessage(translatable("fakeplayer.command.generic.success"));
-                                }
-                            });
+                    .thenAcceptAsync(success -> {
+                        manager.rememberSkin(sender, fake, player);
+                        Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                            if (success) {
+                                fake.sendMessage(translatable("fakeplayer.command.generic.success"));
+                            }
                         });
+                    });
         } finally {
             if (!sender.isOp()) {
                 spams.put(sender, new MutableInt(1200));

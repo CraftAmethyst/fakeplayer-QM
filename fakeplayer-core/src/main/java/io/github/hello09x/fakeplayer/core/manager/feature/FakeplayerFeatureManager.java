@@ -39,8 +39,8 @@ public class FakeplayerFeatureManager {
         }
 
         String value = Optional.ofNullable(repository.selectByPlayerIdAndKey(player.getUniqueId(), key))
-                               .map(UserConfig::value)
-                               .orElseGet(() -> this.getDefaultOption(key));
+                .map(UserConfig::value)
+                .orElseGet(() -> this.getDefaultOption(key));
 
         return new FeatureInstance(key, value);
     }

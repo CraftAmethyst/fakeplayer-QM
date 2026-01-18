@@ -166,8 +166,8 @@ public class Fakeplayer {
                     this.network = bridge.createNetwork(address);
                     this.network.placeNewPlayer(Bukkit.getServer(), this.player);
                     this.player.setHealth(Optional.ofNullable(this.player.getAttribute(Attributes.maxHealth()))
-                                                  .map(AttributeInstance::getValue)
-                                                  .orElse(20D));    // 恢复生命值
+                            .map(AttributeInstance::getValue)
+                            .orElse(20D));    // 恢复生命值
                     this.player.setFoodLevel(20);
                     this.setupName();
                     this.handle.setupClientOptions();   // 处理皮肤设置问题

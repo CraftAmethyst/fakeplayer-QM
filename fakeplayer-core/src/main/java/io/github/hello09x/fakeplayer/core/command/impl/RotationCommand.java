@@ -39,7 +39,7 @@ public class RotationCommand extends AbstractCommand {
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    public void lookMe(@NotNull Player sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException{
+    public void lookMe(@NotNull Player sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = getFakeplayer(sender, args);
         if (!Objects.equals(fake.getWorld(), sender.getWorld())) {
             return;

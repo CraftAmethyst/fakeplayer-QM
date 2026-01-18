@@ -38,9 +38,9 @@ public class ActionManager {
             @NotNull ActionType action
     ) {
         return Optional.ofNullable(this.managers.get(player.getUniqueId()))
-                       .map(manager -> manager.get(action))
-                       .filter(ac -> ac.getSetting().remains > 0)
-                       .isPresent();
+                .map(manager -> manager.get(action))
+                .filter(ac -> ac.getSetting().remains > 0)
+                .isPresent();
     }
 
     public @NotNull @Unmodifiable Set<ActionType> getActiveActions(@NotNull Player player) {
@@ -50,10 +50,10 @@ public class ActionManager {
         }
 
         return manager.entrySet()
-                      .stream()
-                      .filter(actions -> actions.getValue().getSetting().remains > 0)
-                      .map(Map.Entry::getKey)
-                      .collect(Collectors.toSet());
+                .stream()
+                .filter(actions -> actions.getValue().getSetting().remains > 0)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
     public void setAction(

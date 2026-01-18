@@ -34,6 +34,10 @@ public final class Main extends JavaPlugin {
 
     private long loadAt;
 
+    public static @NotNull Injector getInjector() {
+        return instance.injector;
+    }
+
     @Override
     public void onLoad() {
         loadAt = System.currentTimeMillis();
@@ -123,10 +127,6 @@ public final class Main extends JavaPlugin {
                 messenger.unregisterOutgoingPluginChannel(this);
             });
         }
-    }
-
-    public static @NotNull Injector getInjector() {
-        return instance.injector;
     }
 
 }

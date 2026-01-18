@@ -4,7 +4,7 @@ plugins {
 
 import org.gradle.api.attributes.java.TargetJvmVersion
 
-def revisionValue = (findProperty('revision') ?: '0.3.19').toString()
+def revisionValue = (findProperty('revision') ?: '0.3.20').toString()
 
 def versions = [
     paperApi: '1.21.7-R0.1-SNAPSHOT',
