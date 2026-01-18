@@ -35,7 +35,6 @@ def configureNms = { Project p, Map cfg ->
     def toolchainVersion = (cfg.toolchainVersion ?: cfg.javaVersion) as int
     useJava(p, toolchainVersion, cfg.javaVersion as int)
     p.dependencies {
-        compileOnly "io.papermc.paper:paper-api:${versions.paperApi}"
         compileOnly "com.github.tanyaofei.devtools:devtools-core:${versions.devtools}"
         if (cfg.coreProvided) {
             compileOnly project(':fakeplayer-core')
