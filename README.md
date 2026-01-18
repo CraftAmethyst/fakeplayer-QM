@@ -1,4 +1,6 @@
-# FakePlayer
+# FakePlayer - QM
+
+A fork of FakePlayer maintained by CraftAmethyst.
 
 ![BANNER_IMAGE](.github/README/BANNER.png)
 
@@ -7,6 +9,11 @@ English | [简体中文](README_zh.md)
 This is a server side plugin inspired by [Carpet-Mod](https://github.com/gnembon/fabric-carpet) for Minecraft `1.20.x` and `1.21.x` and above.
 
 [Click me](https://youtu.be/NePaDz-P5nI) to visit a demo video.
+
+## Compared to the original project, we have:
+
++ More active maintenance and updates to support the latest Minecraft versions.
++ Convert projects from Maven to Gradle to simplify the build process.
 
 ## Features
 
@@ -31,8 +38,9 @@ This approach can let you preview new content when you are upgrading it.
 
 ## Commands
 
+
 | Command       | Description                               | Permission                   | Note                                                            |
-|---------------|-------------------------------------------|------------------------------|-----------------------------------------------------------------|
+| ------------- | ----------------------------------------- | ---------------------------- | --------------------------------------------------------------- |
 | /fp spawn     | Spawn a fake player                       | fakeplayer.command.spawn     |                                                                 |
 | /fp kill      | Kill a fake player                        | fakeplayer.command.kill      |                                                                 |
 | /fp killall   | Kill all fake players on the server       | OP                           |                                                                 |
@@ -43,7 +51,7 @@ This approach can let you preview new content when you are upgrading it.
 | /fp drop      | Drop held item                            | fakeplayer.command.drop      |                                                                 |
 | /fp dropstack | Drop entire stack of the held item        | fakeplayer.command.dropstack |                                                                 |
 | /fp dropinv   | Drop all items in the inventory           | fakeplayer.command.dropinv   |                                                                 |
-| /fp skin      | Copy skin from another player             | fakeplayer.command.skin      | 60 seconds cooldown if copy from a offline player               | 
+| /fp skin      | Copy skin from another player             | fakeplayer.command.skin      | 60 seconds cooldown if copy from a offline player               |
 | /fp invsee    | Open an inventory of a fake player        | fakeplayer.command.invsee    | Right-clicking on fake players has the same effect              |
 | /fp sleep     | Sleep                                     | fakeplayer.command.sleep     |                                                                 |
 | /fp wakeup    | Wake up                                   | fakeplayer.command.wakeup    |                                                                 |
@@ -80,16 +88,17 @@ Command examples:
 + `/fp config list` - View all personalized configurations
 + `/fp config set collidable false` - Set personalized configuration
 
-| Configuration Item | Note                                                                                                                                |
-|--------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| collidable         | Whether collision box is enabled                                                                                                    |
-| invulnerable       | Whether invincible mode is enabled                                                                                                  |
-| wolverine          | Whether super heal mode is enabled                                                                                                  |
-| look_at_entity     | Automatically look at nearby attackable entities (including players), can be combined with `attack` to automatically fight monsters |
-| pickup_items       | Whether to pick up items                                                                                                            |
-| skin               | Whether to use your skin                                                                                                            |
-| replenish          | Whether to auto-replenish                                                                                                           |
-| autofish           | Whether to autofish                                                                                                                 |
+
+| Configuration Item | Note                                                                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| collidable         | Whether collision box is enabled                                                                                                   |
+| invulnerable       | Whether invincible mode is enabled                                                                                                 |
+| wolverine          | Whether super heal mode is enabled                                                                                                 |
+| look_at_entity     | Automatically look at nearby attackable entities (including players), can be combined with`attack` to automatically fight monsters |
+| pickup_items       | Whether to pick up items                                                                                                           |
+| skin               | Whether to use your skin                                                                                                           |
+| replenish          | Whether to auto-replenish                                                                                                          |
+| autofish           | Whether to autofish                                                                                                                |
 
 ## Permissions
 
@@ -151,6 +160,7 @@ Each command has its own permission node, but we provided some permissions packs
 
 If your server does not restrict various player commands, you can use this directly.
 `fakeplayer.basic` includes all secure permissions, except for `/fp cmd` commands.
+
 </details>
 
 ## Placeholder Variables
@@ -200,5 +210,3 @@ self-commands:
 # Build Project
 
 See the [introduction](./BUILD.md).
-
-
