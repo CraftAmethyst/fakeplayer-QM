@@ -408,6 +408,20 @@ public class CommandRegistry {
                                 .withShortDescription("fakeplayer.command.sleep.description")
                                 .withPermission(Permission.sleep)
                                 .withRequirement(CommandSupports::hasFakeplayer)
+                                .withSubcommands(
+                                        command("once")
+                                                .withShortDescription("fakeplayer.command.sleep.once")
+                                                .withOptionalArguments(fakeplayer("name", p -> !p.isSleeping()))
+                                                .executes(sleepCommand::sleepOnce),
+                                        command("auto")
+                                                .withShortDescription("fakeplayer.command.sleep.auto")
+                                                .withOptionalArguments(fakeplayer("name"))
+                                                .executes(sleepCommand::sleepAuto),
+                                        command("stop")
+                                                .withShortDescription("fakeplayer.command.sleep.stop")
+                                                .withOptionalArguments(fakeplayer("name"))
+                                                .executes(sleepCommand::sleepStop)
+                                )
                                 .withOptionalArguments(fakeplayer("name", p -> !p.isSleeping()))
                                 .executes(sleepCommand::sleep),
                         command("wakeup")
