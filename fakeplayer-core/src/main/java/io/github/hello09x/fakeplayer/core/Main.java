@@ -14,6 +14,7 @@ import io.github.hello09x.fakeplayer.core.listener.FakeplayerLifecycleListener;
 import io.github.hello09x.fakeplayer.core.listener.FakeplayerListener;
 import io.github.hello09x.fakeplayer.core.listener.PlayerListener;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutofishManager;
+import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutosleepManager;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerReplenishManager;
 import io.github.hello09x.fakeplayer.core.manager.WildFakeplayerManager;
 import io.github.hello09x.fakeplayer.core.manager.invsee.InvseeManager;
@@ -68,9 +69,13 @@ public final class Main extends JavaPlugin {
             manager.registerEvents(injector.getInstance(FakeplayerLifecycleListener.class), this);
             manager.registerEvents(injector.getInstance(FakeplayerListener.class), this);
             manager.registerEvents(injector.getInstance(FakeplayerAutofishManager.class), this);
+            manager.registerEvents(injector.getInstance(FakeplayerAutosleepManager.class), this);
             manager.registerEvents(injector.getInstance(FakeplayerReplenishManager.class), this);
             manager.registerEvents(injector.getInstance(InvseeManager.class), this);
         }
+
+        // Start autosleep scheduler
+        injector.getInstance(FakeplayerAutosleepManager.class).startScheduler();
 
         {
             var placeholderExpansion = injector.getInstance(FakeplayerPlaceholderExpansion.class);
