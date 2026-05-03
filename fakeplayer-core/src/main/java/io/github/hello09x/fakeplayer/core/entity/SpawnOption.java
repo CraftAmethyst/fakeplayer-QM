@@ -30,7 +30,9 @@ public record SpawnOption(
 
         boolean autofish,
 
-        boolean wolverine
+        boolean wolverine,
+
+        boolean autosleep
 
 ) {
 }

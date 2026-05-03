@@ -10,6 +10,7 @@ import io.github.hello09x.fakeplayer.core.config.FakeplayerConfig;
 import io.github.hello09x.fakeplayer.core.config.PreventKicking;
 import io.github.hello09x.fakeplayer.core.constant.MetadataKeys;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutofishManager;
+import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutosleepManager;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerReplenishManager;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerSkinManager;
 import io.github.hello09x.fakeplayer.core.manager.action.ActionManager;
@@ -46,6 +47,7 @@ public class Fakeplayer {
     private final static FakeplayerSkinManager skinManager = Main.getInjector().getInstance(FakeplayerSkinManager.class);
     private final static FakeplayerReplenishManager replenishManager = Main.getInjector().getInstance(FakeplayerReplenishManager.class);
     private final static FakeplayerAutofishManager autofishManager = Main.getInjector().getInstance(FakeplayerAutofishManager.class);
+    private final static FakeplayerAutosleepManager autosleepManager = Main.getInjector().getInstance(FakeplayerAutosleepManager.class);
     private final static ActionManager actionManager = Main.getInjector().getInstance(ActionManager.class);
 
 
@@ -161,6 +163,9 @@ public class Fakeplayer {
                     }
                     if (option.autofish()) {
                         autofishManager.setAutofish(player, true);
+                    }
+                    if (option.autosleep()) {
+                        autosleepManager.setAutosleep(player, true);
                     }
 
                     this.network = bridge.createNetwork(address);

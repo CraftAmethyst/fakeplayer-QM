@@ -133,6 +133,15 @@ public enum Feature implements Translatable, Singletons {
             faker -> String.valueOf(autofishManager.get().isAutofish(faker)),
             (faker, value) -> autofishManager.get().setAutofish(faker, Boolean.parseBoolean(value))
     ),
+
+    autosleep(
+            "fakeplayer.config.autosleep",
+            List.of(Permission.config, Permission.autosleep),
+            List.of("true", "false"),
+            "false",
+            faker -> String.valueOf(autosleepManager.get().isAutosleep(faker)),
+            (faker, value) -> autosleepManager.get().setAutosleep(faker, Boolean.parseBoolean(value))
+    ),
     ;
 
     @NotNull

@@ -125,6 +125,10 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (injector != null) {
+            Exceptions.suppress(this, () -> injector.getInstance(FakeplayerAutosleepManager.class).onDisable());
+        }
+
         {
             Exceptions.suppress(this, () -> {
                 var messenger = getServer().getMessenger();

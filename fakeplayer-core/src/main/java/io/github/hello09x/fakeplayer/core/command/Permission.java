@@ -40,6 +40,7 @@ public interface Permission {
     String replenish = "fakeplayer.config.replenish";
     String replenishFromChest = "fakeplayer.config.replenish.chest";
     String autofish = "fakeplayer.config.autofish";
+    String autosleep = "fakeplayer.config.autosleep";
     String sleep = "fakeplayer.command.sleep";
     String wakeup = "fakeplayer.command.wakeup";
     String cmd = "fakeplayer.command.cmd";

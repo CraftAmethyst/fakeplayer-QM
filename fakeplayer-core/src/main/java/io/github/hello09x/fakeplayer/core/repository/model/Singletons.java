@@ -3,6 +3,7 @@ package io.github.hello09x.fakeplayer.core.repository.model;
 import io.github.hello09x.devtools.core.utils.SingletonSupplier;
 import io.github.hello09x.fakeplayer.core.Main;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutofishManager;
+import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutosleepManager;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerReplenishManager;
 import io.github.hello09x.fakeplayer.core.manager.action.ActionManager;
 
@@ -17,5 +18,6 @@ public interface Singletons {
     Supplier<ActionManager> actionManager = new SingletonSupplier<>(() -> Main.getInjector().getInstance(ActionManager.class));
     Supplier<FakeplayerReplenishManager> replenishManager = new SingletonSupplier<>(() -> Main.getInjector().getInstance(FakeplayerReplenishManager.class));
     Supplier<FakeplayerAutofishManager> autofishManager = new SingletonSupplier<>(() -> Main.getInjector().getInstance(FakeplayerAutofishManager.class));
+    Supplier<FakeplayerAutosleepManager> autosleepManager = new SingletonSupplier<>(() -> Main.getInjector().getInstance(FakeplayerAutosleepManager.class));
 
 }

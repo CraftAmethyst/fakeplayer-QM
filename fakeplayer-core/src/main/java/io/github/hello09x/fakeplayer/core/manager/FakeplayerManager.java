@@ -118,7 +118,8 @@ public class FakeplayerManager {
                             configs.get(Feature.skin).asBoolean(),
                             configs.get(Feature.replenish).asBoolean(),
                             configs.get(Feature.autofish).asBoolean(),
-                            configs.get(Feature.wolverine).asBoolean()
+                            configs.get(Feature.wolverine).asBoolean(),
+                            configs.get(Feature.autosleep).asBoolean()
                     );
                 })
                 .thenComposeAsync(fp::spawnAsync)

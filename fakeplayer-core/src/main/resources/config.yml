@@ -12,7 +12,7 @@
 
 # DO NOT EDIT
 # 不要修改
-version: 19
+version: 20
 
 # 多国语言配置
 # 可选项: en, zh, zh_cn, zh_tw, zh_hk
@@ -285,6 +285,7 @@ default-features:
   invulnerable: false
   replenish: false
   autofish: false
+  autosleep: false
   wolverine: false
 
 
