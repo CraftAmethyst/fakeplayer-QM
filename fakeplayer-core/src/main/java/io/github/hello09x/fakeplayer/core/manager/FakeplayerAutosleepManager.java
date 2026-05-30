@@ -2,11 +2,11 @@ package io.github.hello09x.fakeplayer.core.manager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.github.hello09x.devtools.core.utils.BlockUtils;
 import io.github.hello09x.fakeplayer.core.Main;
 import io.github.hello09x.fakeplayer.core.constant.MetadataKeys;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -34,6 +34,9 @@ import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
  */
 @Singleton
 public class FakeplayerAutosleepManager implements Listener {
+
+    private static final int BED_SEARCH_RADIUS = 8;
+    private static final int BED_SEARCH_HEIGHT = 3;
 
     private final FakeplayerManager manager;
     private final Set<UUID> autosleepPlayers = new HashSet<>();
@@ -66,10 +69,6 @@ public class FakeplayerAutosleepManager implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onTimeSkip(@NotNull TimeSkipEvent event) {
-        if (event.getSkipReason() != TimeSkipEvent.SkipReason.NIGHT_SKIP) {
-            return;
-        }
-
         noBedNotifiedPlayers.clear();
     }
 
@@ -102,13 +101,7 @@ public class FakeplayerAutosleepManager implements Listener {
     }
 
     public boolean trySleep(@NotNull Player fake, boolean notifyCreator) {
-        var bed = BlockUtils.getNearbyBlock(fake.getLocation(), 4, block -> {
-            if (!(block.getBlockData() instanceof Bed data)) {
-                return false;
-            }
-
-            return !data.isOccupied() && data.getPart() == Bed.Part.HEAD;
-        });
+        var bed = findAvailableBed(fake);
 
         if (bed == null) {
             if (notifyCreator) {
@@ -117,9 +110,50 @@ public class FakeplayerAutosleepManager implements Listener {
             return false;
         }
 
-        fake.sleep(bed.getLocation(), false);
-        noBedNotifiedPlayers.remove(fake.getUniqueId());
-        return true;
+        if (fake.sleep(bed.getLocation(), true)) {
+            noBedNotifiedPlayers.remove(fake.getUniqueId());
+            return true;
+        }
+
+        if (notifyCreator) {
+            notifyNoBed(fake);
+        }
+        return false;
+    }
+
+    private Block findAvailableBed(@NotNull Player fake) {
+        var center = fake.getLocation().getBlock();
+        for (int y = -BED_SEARCH_HEIGHT; y <= BED_SEARCH_HEIGHT; y++) {
+            for (int x = -BED_SEARCH_RADIUS; x <= BED_SEARCH_RADIUS; x++) {
+                for (int z = -BED_SEARCH_RADIUS; z <= BED_SEARCH_RADIUS; z++) {
+                    var bed = getBedHead(center.getRelative(x, y, z));
+                    if (bed == null) {
+                        continue;
+                    }
+
+                    var data = (Bed) bed.getBlockData();
+                    if (!data.isOccupied()) {
+                        return bed;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private Block getBedHead(@NotNull Block block) {
+        if (!(block.getBlockData() instanceof Bed data)) {
+            return null;
+        }
+
+        if (data.getPart() == Bed.Part.HEAD) {
+            return block;
+        }
+
+        var head = block.getRelative(data.getFacing());
+        return head.getBlockData() instanceof Bed headData && headData.getPart() == Bed.Part.HEAD
+                ? head
+                : null;
     }
 
     private void notifyNoBed(@NotNull Player fake) {

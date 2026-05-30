@@ -156,7 +156,13 @@ public class NMSServerPlayerImpl implements NMSServerPlayer {
 
     @Override
     public void drop(boolean allStack) {
-        handle.drop(allStack);
+        handle.connection.handlePlayerAction(new ServerboundPlayerActionPacket(
+                allStack
+                        ? ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS
+                        : ServerboundPlayerActionPacket.Action.DROP_ITEM,
+                new BlockPos(0, 0, 0),
+                Direction.DOWN
+        ));
     }
 
     @Override
@@ -209,7 +215,16 @@ public class NMSServerPlayerImpl implements NMSServerPlayer {
     @Override
     public void drop(int slot, boolean flag, boolean flag1) {
         var inventory = handle.getInventory();
-        handle.drop(inventory.removeItem(slot, inventory.getItem(slot).getCount()), flag, flag1);
+        if (slot < 0 || slot >= inventory.getContainerSize()) {
+            return;
+        }
+
+        var item = inventory.getItem(slot);
+        if (item.isEmpty()) {
+            return;
+        }
+
+        handle.drop(inventory.removeItem(slot, item.getCount()), flag);
     }
 
     @Override

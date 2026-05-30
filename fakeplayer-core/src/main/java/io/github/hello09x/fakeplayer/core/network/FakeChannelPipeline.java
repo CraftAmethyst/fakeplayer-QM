@@ -246,12 +246,12 @@ public class FakeChannelPipeline implements ChannelPipeline {
 
     @Override
     public ChannelFuture disconnect() {
-        return newSucceededFuture();
+        return disconnect(newPromise());
     }
 
     @Override
     public ChannelFuture close() {
-        return newSucceededFuture();
+        return close(newPromise());
     }
 
     @Override
@@ -279,13 +279,13 @@ public class FakeChannelPipeline implements ChannelPipeline {
 
     @Override
     public ChannelFuture disconnect(ChannelPromise promise) {
-        promise.setSuccess();
+        this.channel.unsafe().disconnect(promise);
         return promise;
     }
 
     @Override
     public ChannelFuture close(ChannelPromise promise) {
-        promise.setSuccess();
+        this.channel.unsafe().close(promise);
         return promise;
     }
 

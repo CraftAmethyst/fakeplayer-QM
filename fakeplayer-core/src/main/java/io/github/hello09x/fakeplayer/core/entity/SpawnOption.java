@@ -16,6 +16,8 @@ public record SpawnOption(
         @NotNull
         Location spawnAt,
 
+        int heldSlot,
+
         boolean invulnerable,
 
         boolean collidable,

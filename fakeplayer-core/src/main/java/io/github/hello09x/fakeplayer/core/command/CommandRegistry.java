@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
+import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import io.github.hello09x.devtools.command.HelpCommand;
 import io.github.hello09x.devtools.core.utils.ComponentUtils;
 import io.github.hello09x.fakeplayer.api.spi.ActionSetting;
@@ -428,7 +429,7 @@ public class CommandRegistry {
                                 .withRequirement(CommandSupports::isCmdAvailable)
                                 .withArguments(
                                         fakeplayer("name"),
-                                        new FakePlayerCommandArgument("command")
+                                        new GreedyStringArgument("command")
                                 )
                                 .executes(cmdCommand::cmd),
 

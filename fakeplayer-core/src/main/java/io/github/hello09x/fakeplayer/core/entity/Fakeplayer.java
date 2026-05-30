@@ -16,6 +16,7 @@ import io.github.hello09x.fakeplayer.core.manager.FakeplayerSkinManager;
 import io.github.hello09x.fakeplayer.core.manager.action.ActionManager;
 import io.github.hello09x.fakeplayer.core.manager.naming.SequenceName;
 import io.github.hello09x.fakeplayer.core.util.Attributes;
+import io.github.hello09x.fakeplayer.core.util.FakeplayerFeatureUtils;
 import io.github.hello09x.fakeplayer.core.util.InternalAddressGenerator;
 import lombok.Getter;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -28,6 +29,7 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 
 import java.net.InetAddress;
@@ -54,6 +56,14 @@ public class Fakeplayer {
     @NotNull
     @Getter
     private final CommandSender creator;
+
+    @NotNull
+    @Getter
+    private final String creatorName;
+
+    @Nullable
+    @Getter
+    private final UUID creatorUuid;
 
     @NotNull
     @Getter
@@ -97,17 +107,30 @@ public class Fakeplayer {
             @NotNull SequenceName sequenceName,
             long lifespan
     ) {
+        this(creator, creator.getName(), creator instanceof Player p ? p.getUniqueId() : null, creatorIp, sequenceName, lifespan);
+    }
+
+    public Fakeplayer(
+            @NotNull CommandSender creator,
+            @NotNull String creatorName,
+            @Nullable UUID creatorUuid,
+            @NotNull String creatorIp,
+            @NotNull SequenceName sequenceName,
+            long lifespan
+    ) {
         this.name = sequenceName.name();
         this.uuid = sequenceName.uuid();
 
         this.creator = creator;
+        this.creatorName = creatorName.isBlank() ? "CONSOLE" : creatorName;
+        this.creatorUuid = creatorUuid;
         this.creatorIp = creatorIp;
         this.sequenceName = sequenceName;
         this.handle = bridge.fromServer(Bukkit.getServer()).newPlayer(uuid, name);
         this.player = handle.getPlayer();
 
         this.ticker = new FakeplayerTicker(this, lifespan);
-        this.player.setPersistent(config.isPersistData());
+        this.player.setPersistent(false);
         this.player.setSleepingIgnored(true);
         this.handle.setPlayBefore(); // 可避免一些插件的第一次入服欢迎信息
         this.handle.disableAdvancements(Main.getInstance()); // 不提示成就信息
@@ -149,7 +172,7 @@ public class Fakeplayer {
                         this.player.getInventory().clear();
                     }
 
-                    this.player.setInvulnerable(option.invulnerable());
+                    FakeplayerFeatureUtils.setInvulnerable(this.player, option.invulnerable());
                     this.player.setCollidable(option.collidable());
                     this.player.setCanPickupItems(option.pickupItems());
                     if (option.lookAtEntity()) {
@@ -170,6 +193,7 @@ public class Fakeplayer {
 
                     this.network = bridge.createNetwork(address);
                     this.network.placeNewPlayer(Bukkit.getServer(), this.player);
+                    this.player.getInventory().setHeldItemSlot(option.heldSlot());
                     this.player.setHealth(Optional.ofNullable(this.player.getAttribute(Attributes.maxHealth()))
                             .map(AttributeInstance::getValue)
                             .orElse(20D));    // 恢复生命值
@@ -246,10 +270,10 @@ public class Fakeplayer {
      * @return 是否是创建者
      */
     public boolean isCreatedBy(@NotNull CommandSender sender) {
-        if (this.creator instanceof Player pc && sender instanceof Player ps) {
-            return pc.getUniqueId().equals(ps.getUniqueId());
+        if (this.creatorUuid != null && sender instanceof Player ps) {
+            return this.creatorUuid.equals(ps.getUniqueId());
         }
-        return creator.getClass() == sender.getClass() && creator.getName().equals(sender.getName());
+        return creatorName.equals(sender.getName());
     }
 
     public @NotNull UUID getUUID() {

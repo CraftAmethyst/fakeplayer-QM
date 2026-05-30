@@ -15,6 +15,7 @@ public class HoldCommand extends AbstractCommand {
         var fake = super.getFakeplayer(sender, args);
         var slot = (int) Objects.requireNonNull(args.get("slot"));
         fake.getInventory().setHeldItemSlot(slot - 1);
+        fake.updateInventory();
     }
 
 }

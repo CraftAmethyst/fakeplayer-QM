@@ -13,6 +13,8 @@ public class FakeChannel extends AbstractChannel {
     private final ChannelConfig config = new DefaultChannelConfig(this);
     private final ChannelPipeline pipeline = new FakeChannelPipeline(this);
     private final InetAddress address;
+    private boolean open = true;
+    private boolean active = true;
 
     public FakeChannel(@Nullable Channel parent, @NotNull InetAddress address) {
         super(parent);
@@ -35,10 +37,13 @@ public class FakeChannel extends AbstractChannel {
 
     @Override
     protected void doClose() throws Exception {
+        this.active = false;
+        this.open = false;
     }
 
     @Override
     protected void doDisconnect() throws Exception {
+        this.active = false;
     }
 
     @Override
@@ -54,7 +59,7 @@ public class FakeChannel extends AbstractChannel {
 
     @Override
     public boolean isActive() {
-        return true;
+        return active;
     }
 
     @Override
@@ -64,7 +69,7 @@ public class FakeChannel extends AbstractChannel {
 
     @Override
     public boolean isOpen() {
-        return true;
+        return open;
     }
 
     @Override

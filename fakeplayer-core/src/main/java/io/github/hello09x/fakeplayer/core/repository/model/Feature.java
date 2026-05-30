@@ -3,6 +3,7 @@ package io.github.hello09x.fakeplayer.core.repository.model;
 import io.github.hello09x.fakeplayer.api.spi.ActionSetting;
 import io.github.hello09x.fakeplayer.api.spi.ActionType;
 import io.github.hello09x.fakeplayer.core.command.Permission;
+import io.github.hello09x.fakeplayer.core.util.FakeplayerFeatureUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.kyori.adventure.translation.Translatable;
@@ -46,8 +47,8 @@ public enum Feature implements Translatable, Singletons {
             List.of(Permission.config),
             List.of("true", "false"),
             "false",
-            faker -> String.valueOf(faker.isInvulnerable()),
-            (faker, value) -> faker.setInvulnerable(Boolean.parseBoolean(value))
+            faker -> String.valueOf(FakeplayerFeatureUtils.isInvulnerable(faker)),
+            (faker, value) -> FakeplayerFeatureUtils.setInvulnerable(faker, Boolean.parseBoolean(value))
     ),
 
     /**

@@ -12,9 +12,11 @@ import io.github.hello09x.fakeplayer.core.Main;
 import io.github.hello09x.fakeplayer.core.config.FakeplayerConfig;
 import io.github.hello09x.fakeplayer.core.constant.MetadataKeys;
 import io.github.hello09x.fakeplayer.core.entity.Fakeplayer;
+import io.github.hello09x.fakeplayer.core.entity.FakeplayerTicker;
 import io.github.hello09x.fakeplayer.core.entity.SpawnOption;
 import io.github.hello09x.fakeplayer.core.manager.feature.FakeplayerFeatureManager;
 import io.github.hello09x.fakeplayer.core.manager.naming.NameManager;
+import io.github.hello09x.fakeplayer.core.manager.naming.SequenceName;
 import io.github.hello09x.fakeplayer.core.repository.model.Feature;
 import io.github.hello09x.fakeplayer.core.util.AddressUtils;
 import io.github.hello09x.fakeplayer.core.util.Commands;
@@ -29,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static net.kyori.adventure.text.Component.*;
 import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
@@ -90,13 +94,76 @@ public class FakeplayerManager {
             @NotNull Location spawnAt,
             long lifespan
     ) {
-        this.checkLimit(creator);
+        return this.spawnAsync(creator, creator.getName(), creator instanceof Player p ? p.getUniqueId() : null, name, spawnAt, lifespan, null, 0, true);
+    }
 
-        var sn = name == null ? nameManager.getRegularName(creator) : nameManager.getSpecifiedName(name);
+    public @NotNull CompletableFuture<Player> restoreAsync(
+            @NotNull String creatorName,
+            @Nullable UUID creatorUuid,
+            @NotNull UUID uuid,
+            @NotNull String name,
+            @NotNull Location spawnAt,
+            @NotNull Map<Feature, String> features,
+            int heldSlot
+    ) {
+        return this.spawnAsync(
+                Bukkit.getConsoleSender(),
+                creatorName,
+                creatorUuid,
+                new SequenceName("persistent", 0, uuid, name),
+                spawnAt,
+                FakeplayerTicker.NON_REMOVE_AT,
+                features,
+                heldSlot,
+                false
+        );
+    }
+
+    private @NotNull CompletableFuture<Player> spawnAsync(
+            @NotNull CommandSender creator,
+            @NotNull String creatorName,
+            @Nullable UUID creatorUuid,
+            @Nullable String name,
+            @NotNull Location spawnAt,
+            long lifespan,
+            @Nullable Map<Feature, String> restoredFeatures,
+            int heldSlot,
+            boolean checkLimit
+    ) {
+        return this.spawnAsync(
+                creator,
+                creatorName,
+                creatorUuid,
+                name == null ? nameManager.getRegularName(creator) : nameManager.getSpecifiedName(name),
+                spawnAt,
+                lifespan,
+                restoredFeatures,
+                heldSlot,
+                checkLimit
+        );
+    }
+
+    private @NotNull CompletableFuture<Player> spawnAsync(
+            @NotNull CommandSender creator,
+            @NotNull String creatorName,
+            @Nullable UUID creatorUuid,
+            @NotNull SequenceName sn,
+            @NotNull Location spawnAt,
+            long lifespan,
+            @Nullable Map<Feature, String> restoredFeatures,
+            int heldSlot,
+            boolean checkLimit
+    ) {
+        if (checkLimit) {
+            this.checkLimit(creator);
+        }
+
         log.info("UUID of fake player %s is %s".formatted(sn.name(), sn.uuid()));
 
         var fp = new Fakeplayer(
                 creator,
+                creatorName,
+                creatorUuid,
                 AddressUtils.getAddress(creator),
                 sn,
                 lifespan
@@ -108,21 +175,33 @@ public class FakeplayerManager {
         this.dispatchCommandsEarly(fp, this.config.getPreSpawnCommands());
         return CompletableFuture
                 .supplyAsync(() -> {
-                    var configs = featureManager.getFeatures(creator);
+                    var configs = featureManager.getFeatures(creator).entrySet()
+                            .stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().asString()));
+                    if (restoredFeatures != null) {
+                        configs.putAll(restoredFeatures);
+                    }
                     return new SpawnOption(
                             spawnAt,
-                            configs.get(Feature.invulnerable).asBoolean(),
-                            configs.get(Feature.collidable).asBoolean(),
-                            configs.get(Feature.look_at_entity).asBoolean(),
-                            configs.get(Feature.pickup_items).asBoolean(),
-                            configs.get(Feature.skin).asBoolean(),
-                            configs.get(Feature.replenish).asBoolean(),
-                            configs.get(Feature.autofish).asBoolean(),
-                            configs.get(Feature.wolverine).asBoolean(),
-                            configs.get(Feature.autosleep).asBoolean()
+                            Math.max(0, Math.min(8, heldSlot)),
+                            Boolean.parseBoolean(configs.get(Feature.invulnerable)),
+                            Boolean.parseBoolean(configs.get(Feature.collidable)),
+                            Boolean.parseBoolean(configs.get(Feature.look_at_entity)),
+                            Boolean.parseBoolean(configs.get(Feature.pickup_items)),
+                            Boolean.parseBoolean(configs.get(Feature.skin)),
+                            Boolean.parseBoolean(configs.get(Feature.replenish)),
+                            Boolean.parseBoolean(configs.get(Feature.autofish)),
+                            Boolean.parseBoolean(configs.get(Feature.wolverine)),
+                            Boolean.parseBoolean(configs.get(Feature.autosleep))
                     );
                 })
                 .thenComposeAsync(fp::spawnAsync)
+                .whenComplete((ignored, throwable) -> {
+                    if (throwable != null) {
+                        this.playerList.remove(fp);
+                        this.nameManager.unregister(fp.getSequenceName());
+                    }
+                })
                 .thenApply(ignored -> target);
     }
 
@@ -163,8 +242,15 @@ public class FakeplayerManager {
     public @Nullable String getCreatorName(@NotNull Player target) {
         return Optional
                 .ofNullable(this.playerList.getByUUID(target.getUniqueId()))
-                .map(Fakeplayer::getCreator)
-                .map(CommandSender::getName)
+                .map(Fakeplayer::getCreatorName)
+                .filter(name -> !name.isBlank())
+                .orElse(null);
+    }
+
+    public @Nullable UUID getCreatorUuid(@NotNull Player target) {
+        return Optional
+                .ofNullable(this.playerList.getByUUID(target.getUniqueId()))
+                .map(Fakeplayer::getCreatorUuid)
                 .orElse(null);
     }
 
@@ -175,16 +261,18 @@ public class FakeplayerManager {
      * @return 创建者
      */
     public @Nullable CommandSender getCreator(@NotNull Player target) {
-        return Optional.ofNullable(this.playerList.getByUUID(target.getUniqueId()))
-                .map(Fakeplayer::getCreator)
-                .map(creator -> {
-                    if (creator instanceof Player p) {
-                        return Bukkit.getPlayer(p.getUniqueId());
-                    } else {
-                        return creator;
-                    }
-                })
-                .orElse(null);
+        var fakeplayer = this.playerList.getByUUID(target.getUniqueId());
+        if (fakeplayer == null) {
+            return null;
+        }
+
+        if (fakeplayer.getCreatorUuid() != null) {
+            var onlineCreator = Bukkit.getPlayer(fakeplayer.getCreatorUuid());
+            if (onlineCreator != null) {
+                return onlineCreator;
+            }
+        }
+        return fakeplayer.getCreator();
     }
 
     /**
@@ -211,7 +299,7 @@ public class FakeplayerManager {
             return false;
         }
 
-        target.kick(textOfChildren(
+        this.nms.fromServer(Bukkit.getServer()).removePlayer(target, textOfChildren(
                 text("[fakeplayer] "),
                 reason == null ? text("removed") : reason
         ));
@@ -226,7 +314,10 @@ public class FakeplayerManager {
     public int removeAll(@Nullable String reason) {
         var targets = getAll();
         for (var target : targets) {
-            target.kick(text(REMOVAL_REASON_PREFIX + (reason == null ? "removed" : reason)));
+            this.nms.fromServer(Bukkit.getServer()).removePlayer(
+                    target,
+                    text(REMOVAL_REASON_PREFIX + (reason == null ? "removed" : reason))
+            );
         }
         return targets.size();
     }
@@ -427,7 +518,7 @@ public class FakeplayerManager {
         var sender = Bukkit.getConsoleSender();
         var p = fp.getName();
         var u = fp.getUUID().toString();
-        var c = fp.getCreator().getName();
+        var c = fp.getCreatorName();
         for (var cmd : Commands.formatCommands(commands, "%p", p, "%u", u, "%c", c)) {
             if (!server.dispatchCommand(sender, cmd)) {
                 log.warning("Failed to execute command for %s: ".formatted(p) + cmd);

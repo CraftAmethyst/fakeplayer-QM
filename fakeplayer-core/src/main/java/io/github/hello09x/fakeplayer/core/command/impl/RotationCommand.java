@@ -68,9 +68,7 @@ public class RotationCommand extends AbstractCommand {
      * 看向指定方向
      */
     private void look(@NotNull Player fake, float yaw, float pitch) {
-        var handle = bridge.fromPlayer(fake);
-        handle.setYRot(yaw % 360);
-        handle.setXRot(Mth.clamp(pitch, -90, 90));
+        fake.setRotation(yaw % 360, Mth.clamp(pitch, -90, 90));
     }
 
     /**
