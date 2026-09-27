@@ -1,0 +1,12 @@
+plugins {
+    id("buildlogic.java-conventions")
+}
+
+dependencies {
+    api(project(":fakeplayer-core"))
+    compileOnly(libs.org.spigotmc.spigot.x3)
+    compileOnly(libs.org.projectlombok.lombok)
+    compileOnly(project(":fakeplayer-api"))
+}
+
+description = "fakeplayer-v1_20_1"
