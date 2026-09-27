@@ -1,12 +1,15 @@
+import io.github.hello09x.buildlogic.NmsConventionExtension
+
 plugins {
-    id("buildlogic.java-conventions")
+    id("fakeplayer.nms-conventions")
 }
 
-dependencies {
-    compileOnly(libs.org.spigotmc.spigot.x4)
-    compileOnly(libs.org.projectlombok.lombok)
-    compileOnly(project(":fakeplayer-core"))
-    compileOnly(project(":fakeplayer-api"))
+extensions.configure<NmsConventionExtension>("fakeplayerNms") {
+    javaVersion.set(17)
+    toolchainVersion.set(21)
+    nmsVersion.set("1.20.2-R0.1-SNAPSHOT")
+    lombok.set(true)
+    coreProvided.set(true)
 }
 
 description = "fakeplayer-v1_20_2"
