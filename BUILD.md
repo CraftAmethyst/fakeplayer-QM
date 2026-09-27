@@ -1,7 +1,5 @@
 # Build / Dev Environment
 
-**Write by GPT**
-
 ## Prerequisites
 
 - JDK 21 (required to run Gradle for this project)
@@ -18,6 +16,12 @@
 3) If you build from CLI, ensure `JAVA_HOME` points to JDK 21 or newer and that a JDK 25 toolchain is installed.
 
 The wrapper uses Gradle 9.4.1. Minecraft 26.2 is compiled against the Paper `26.2.build.111-stable` development bundle through Paperweight.
+
+## Project layout
+
+- `fakeplayer-api`, `fakeplayer-core`, and `fakeplayer-dist` are the shared API, implementation, and distribution modules.
+- Minecraft version implementations live under `versions/` while keeping their existing Gradle project paths.
+- Shared Kotlin DSL convention plugins live under `build-logic/`.
 
 ## Build
 
@@ -42,7 +46,7 @@ Output:
 
 ## Optional: local Spigot remapped jar
 
-By default, Gradle will resolve Spigot from Maven. If you want to use a local jar instead:
+By default, Gradle resolves Spigot from its configured repositories. If you want to use a local jar instead:
 1) Run BuildTools for the target version.
 2) Put one of the following into `lib/`:
    - `spigot-<mcVersion>-remapped-mojang.jar`

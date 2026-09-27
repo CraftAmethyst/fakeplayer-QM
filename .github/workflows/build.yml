@@ -18,7 +18,7 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Set up JDK 25 for BuildTools
+      - name: Set up JDK 25 for BuildTools and Maven cache
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
