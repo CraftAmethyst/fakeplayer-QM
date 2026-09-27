@@ -26,3 +26,9 @@ include 'fakeplayer-v1_21_10'
 include 'fakeplayer-v1_21_11'
 include 'fakeplayer-v26_1'
 include 'fakeplayer-v26_2'
+
+file('versions').listFiles()
+    ?.findAll { it.isDirectory() && it.name.startsWith('fakeplayer-v') }
+    ?.each { versionProject ->
+        project(":${versionProject.name}").projectDir = versionProject
+    }
