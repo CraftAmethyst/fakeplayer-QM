@@ -44,5 +44,12 @@ dependencies {
                 }
             }
         }
+        withModule("io.papermc.paper:paper-api") {
+            allVariants {
+                withCapabilities {
+                    removeCapability("org.spigotmc", "spigot-api")
+                }
+            }
+        }
     }
 }

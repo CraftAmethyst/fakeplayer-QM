@@ -24,7 +24,7 @@ dependencies {
         ":fakeplayer-v1_21", ":fakeplayer-v1_21_1", ":fakeplayer-v1_21_3", ":fakeplayer-v1_21_4",
         ":fakeplayer-v1_21_5", ":fakeplayer-v1_21_6", ":fakeplayer-v1_21_7", ":fakeplayer-v1_21_8",
         ":fakeplayer-v1_21_9", ":fakeplayer-v1_21_10", ":fakeplayer-v1_21_11", ":fakeplayer-v26_1",
-        ":fakeplayer-v26_2",
+        ":fakeplayer-v26_2", ":fakeplayer-v26_3",
     ).forEach { add("implementation", project(it)) }
 }
 
@@ -39,7 +39,7 @@ tasks.named("build") { dependsOn(tasks.named("shadowJar")) }
 
 val serverVersions = listOf(
     "1.20.1", "1.20.2", "1.20.6", "1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.5",
-    "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11", "26.1", "26.1.1", "26.1.2", "26.2",
+    "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11", "26.1", "26.1.1", "26.1.2", "26.2", "26.3",
 )
 tasks.register("copyToServers") {
     dependsOn(tasks.named("shadowJar"))

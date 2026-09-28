@@ -10,11 +10,11 @@
 
 仅支持 `Paper` 及其下游如 (`Purpur`) 核心，所有测试均在 `Purpur` 进行，因此 `Purpur` 的兼容性最高
 
-Minecraft 1.20.x 至 26.1.x 要求使用 Java 21，Minecraft 26.2 要求使用 Java 25。
+Minecraft 1.20.x 至 26.1.x 要求使用 Java 21，Minecraft 26.2 和 26.3 要求使用 Java 25。
 
 + 支持 `1.20`, `1.20.2`, `1.20.3`, `1.20.4`, `1.20.5`, `1.20.6`
 + 支持 `1.21` 至 `1.21.11`
-+ 支持 `26.1`, `26.1.1`, `26.1.2`, `26.2`
++ 支持 `26.1`, `26.1.1`, `26.1.2`, `26.2`, `26.3`
 
 ## 对比原项目，我们有：
 
@@ -31,7 +31,7 @@ Minecraft 1.20.x 至 26.1.x 要求使用 Java 21，Minecraft 26.2 要求使用 J
 
 ## 前置插件:
 
-- [CommandAPI](https://commandapi.jorel.dev)（Minecraft 26.2 需要 12.0.0 或更高版本）
+- [CommandAPI](https://commandapi.jorel.dev)（Minecraft 26.2 和 26.3 需要 12.0.0 或更高版本）
 
 ## 配置文件
 

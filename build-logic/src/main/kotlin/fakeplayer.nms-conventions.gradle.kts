@@ -2,7 +2,9 @@ import org.gradle.api.JavaVersion
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaToolchainService
 import io.github.hello09x.buildlogic.BuildConstants
+import io.github.hello09x.buildlogic.DownloadSpigotJar
 import io.github.hello09x.buildlogic.NmsConventionExtension
 
 plugins {
@@ -14,7 +16,8 @@ val fakeplayerNms = extensions.create<NmsConventionExtension>("fakeplayerNms")
 afterEvaluate {
     val javaVersion = fakeplayerNms.javaVersion.get()
     val toolchainVersion = fakeplayerNms.toolchainVersion.orElse(javaVersion).get()
-    extensions.configure<JavaPluginExtension> {
+    val javaExtension = extensions.getByType<JavaPluginExtension>()
+    javaExtension.apply {
         toolchain.languageVersion.set(JavaLanguageVersion.of(toolchainVersion))
         sourceCompatibility = JavaVersion.toVersion(toolchainVersion)
         targetCompatibility = JavaVersion.toVersion(toolchainVersion)
@@ -42,21 +45,29 @@ afterEvaluate {
 
         val nmsVersion = fakeplayerNms.nmsVersion.get()
         val mcVersion = nmsVersion.substringBefore("-R")
-        val candidates = if (fakeplayerNms.remappedMojang.get()) {
-            listOf(
-                "${rootDir}/lib/spigot-${nmsVersion}-remapped-mojang.jar",
-                "${rootDir}/lib/spigot-${mcVersion}-remapped-mojang.jar",
-                "${rootDir}/lib/spigot-${nmsVersion}.jar",
-                "${rootDir}/lib/spigot-${mcVersion}.jar",
-            )
+        if (fakeplayerNms.remappedMojang.get()) {
+            add("compileOnly", "org.spigotmc:spigot:${nmsVersion}:remapped-mojang")
         } else {
-            listOf("${rootDir}/lib/spigot-${nmsVersion}.jar", "${rootDir}/lib/spigot-${mcVersion}.jar")
-        }
-        val spigotJar = candidates.map(::file).firstOrNull { it.exists() }
-        when {
-            spigotJar != null -> add("compileOnly", files(spigotJar))
-            fakeplayerNms.remappedMojang.get() -> add("compileOnly", "org.spigotmc:spigot:${nmsVersion}:remapped-mojang")
-            else -> add("compileOnly", "org.spigotmc:spigot:${nmsVersion}")
+            val downloadSpigot = tasks.register<DownloadSpigotJar>("downloadSpigot") {
+                minecraftVersion.set(mcVersion)
+                outputFile.set(layout.buildDirectory.file("spigot/$mcVersion/spigot-$mcVersion.jar"))
+                val toolchainService = project.extensions.getByType<JavaToolchainService>()
+                javaExecutable.set(
+                    toolchainService.launcherFor(javaExtension.toolchain)
+                        .map { it.executablePath.asFile.absolutePath }
+                )
+                outputs.dir(layout.buildDirectory.dir("spigot/$mcVersion/libraries"))
+            }
+            add("compileOnly", files(downloadSpigot))
+            // The downloaded Spigot launcher extracts the server's external dependencies
+            // alongside the server jar. They are required when javac resolves signatures
+            // from the server classes (for example DataFixerUpper and Authlib types).
+            add(
+                "compileOnly",
+                fileTree(layout.buildDirectory.dir("spigot/$mcVersion/libraries")) {
+                    include("*.jar")
+                }.builtBy(downloadSpigot)
+            )
         }
 
         if (fakeplayerNms.lombok.get()) {

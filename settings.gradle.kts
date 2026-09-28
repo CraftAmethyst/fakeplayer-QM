@@ -29,6 +29,7 @@ include(
     ":fakeplayer-v1_21_11",
     ":fakeplayer-v26_1",
     ":fakeplayer-v26_2",
+    ":fakeplayer-v26_3",
 )
 
 file("versions").listFiles()

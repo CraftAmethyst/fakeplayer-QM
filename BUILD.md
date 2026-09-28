@@ -3,11 +3,11 @@
 ## Prerequisites
 
 - JDK 21 (required to run Gradle for this project)
-- JDK 25 (required as a Gradle toolchain for Minecraft 26.1.x and 26.2 support)
+- JDK 25 (required as a Gradle toolchain for Minecraft 26.1.x, 26.2, and 26.3 support)
 - Git
 - Internet access for Gradle dependency resolution
 
-> Most modules compile with JDK 21. The 26.1.x and 26.2 NMS modules use a JDK 25 toolchain while still emitting Java 21 bytecode. Minecraft 26.2 servers themselves require Java 25.
+> Most modules compile with JDK 21. The 26.1.x, 26.2, and 26.3 NMS modules use a JDK 25 toolchain while still emitting Java 21 bytecode. Minecraft 26.2 and 26.3 servers themselves require Java 25.
 
 ## Setup
 
@@ -15,7 +15,7 @@
 2) Set the Gradle JVM to JDK 21 (IntelliJ: Settings -> Build Tools -> Gradle -> Gradle JVM).  
 3) If you build from CLI, ensure `JAVA_HOME` points to JDK 21 or newer and that a JDK 25 toolchain is installed.
 
-The wrapper uses Gradle 9.4.1. Minecraft 26.2 is compiled against the Paper `26.2.build.111-stable` development bundle through Paperweight.
+The wrapper uses Gradle 9.4.1. Minecraft 26.2 is compiled against the Paper `26.2.build.111-stable` development bundle, and Minecraft 26.3 against `26.3.build.49-alpha`, through Paperweight.
 
 ## Project layout
 
@@ -44,17 +44,17 @@ macOS / Linux:
 Output:
 - `target/libs/fakeplayer-<version>.jar`
 
-## Optional: local Spigot remapped jar
+## Spigot dependencies
 
-By default, Gradle resolves Spigot from its configured repositories. If you want to use a local jar instead:
-1) Run BuildTools for the target version.
-2) Put one of the following into `lib/`:
-   - `spigot-<mcVersion>-remapped-mojang.jar`
-   - `spigot-<mcVersion>.jar`
+Spigot NMS modules that use server-mapped classes resolve the latest Spigot build through the MCJars API. The launcher is downloaded, its embedded server jar is extracted, and the result is cached under the module's Gradle `build/` directory. Modules that require Mojang-mapped classes continue to use the `remapped-mojang` development artifact because the MCJars server download is a runtime Spigot jar, not a Mojang-mapped compile jar.
 
-Gradle will automatically pick it up if present.
+The API endpoint is:
 
-For Minecraft 26.1.x, run BuildTools with Java 25 for `26.1.2`; Spigot no longer publishes or needs a `remapped-mojang` classifier for this version line. Minecraft 26.2 uses the Paper development bundle and does not require a local Spigot jar.
+```text
+https://mcjars.app/api/v3/builds/types/SPIGOT/versions/<mcVersion>/latest?fields=installation
+```
+
+Paper 26.2 and 26.3 modules continue to use their Paperweight development bundles and do not download a Spigot jar.
 
 ## Optional: copy to local test servers
 

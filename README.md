@@ -6,7 +6,7 @@ A fork of FakePlayer maintained by CraftAmethyst.
 
 English | [简体中文](README_zh.md)
 
-This is a server side plugin inspired by [Carpet-Mod](https://github.com/gnembon/fabric-carpet) for Minecraft `1.20.x`, `1.21.x`, `26.1.x`, and `26.2`.
+This is a server side plugin inspired by [Carpet-Mod](https://github.com/gnembon/fabric-carpet) for Minecraft `1.20.x`, `1.21.x`, `26.1.x`, `26.2`, and `26.3`.
 
 [Click me](https://youtu.be/NePaDz-P5nI) to visit a demo video.
 
@@ -27,9 +27,9 @@ This is a server side plugin inspired by [Carpet-Mod](https://github.com/gnembon
 
 + [Paper](https://papermc.io) or [Purpur](http://purpurmc.org) software
 + [CommandAPI](https://commandapi.jorel.dev) Plugin (Any version **except** `10.0.0`)
-+ Java 21 for Minecraft 1.20.x through 26.1.x; Java 25 for Minecraft 26.2
++ Java 21 for Minecraft 1.20.x through 26.1.x; Java 25 for Minecraft 26.2 and 26.3
 
-Minecraft 26.2 requires CommandAPI 12.0.0 or newer.
+Minecraft 26.2 and 26.3 require CommandAPI 12.0.0 or newer.
 
 ## Config file
 

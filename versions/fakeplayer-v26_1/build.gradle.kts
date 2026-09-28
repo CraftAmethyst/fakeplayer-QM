@@ -13,4 +13,9 @@ extensions.configure<NmsConventionExtension>("fakeplayerNms") {
     remappedMojang.set(false)
 }
 
+dependencies {
+    compileOnly("org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT")
+    compileOnly("io.netty:netty-transport:4.2.7.Final")
+}
+
 description = "fakeplayer-v26_1"

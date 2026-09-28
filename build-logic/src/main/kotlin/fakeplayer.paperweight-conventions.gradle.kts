@@ -10,8 +10,14 @@ plugins {
     id("io.papermc.paperweight.userdev")
 }
 
-paperweight {
-    paperDevBundle("26.2.build.111-stable")
+val bundleVersion = when (project.name) {
+    "fakeplayer-v26_2" -> "26.2.build.111-stable"
+    "fakeplayer-v26_3" -> "26.3.build.49-alpha"
+    else -> error("Unsupported Paperweight module: ${project.name}")
+}
+
+dependencies {
+    paperweight.paperDevBundle(bundleVersion)
 }
 
 extensions.configure<JavaPluginExtension> {
