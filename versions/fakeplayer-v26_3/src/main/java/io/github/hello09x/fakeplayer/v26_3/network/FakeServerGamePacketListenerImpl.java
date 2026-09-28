@@ -62,9 +62,9 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
      * Fake players have no client, so knockback has to be applied server-side.
      */
     public void handleClientboundSetEntityMotionPacket(@NotNull ClientboundSetEntityMotionPacket packet) {
-        if (packet.id() == this.player.getId() && this.player.hurtMarked) {
+        if (packet.id() == this.player.getId() && this.player.syncVelocity) {
             Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                this.player.hurtMarked = true;
+                this.player.syncVelocity = true;
                 var movement = packet.movement();
                 this.player.lerpMotion(movement);
             });

@@ -2,6 +2,7 @@ package io.github.hello09x.fakeplayer.v26_3.action;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
@@ -29,7 +30,7 @@ public class AttackAction extends TraceAction {
 
         var entityHit = (EntityHitResult) hit;
         player.attack(entityHit.getEntity());
-        player.swing(InteractionHand.MAIN_HAND);
+        player.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         player.resetAttackStrengthTicker();
         player.resetLastActionTime();
         return true;

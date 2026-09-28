@@ -4,6 +4,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,7 @@ public class UseAction extends TraceAction {
                     if (pos.getY() < player.level().getMaxY() - (side == Direction.UP ? 1 : 0) && world.mayInteract(player, pos)) {
                         var result = player.gameMode.useItemOn(player, world, player.getItemInHand(hand), hand, blockHit);
                         if (result.consumesAction()) {
-                            player.swing(hand);
+                            player.swing(hand, SwingAnimation.DEFAULT, false);
                             current.freeze = 3;
                             return true;
                         }

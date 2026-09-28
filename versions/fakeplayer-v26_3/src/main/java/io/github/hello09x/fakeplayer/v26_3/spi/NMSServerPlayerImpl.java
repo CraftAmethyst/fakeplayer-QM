@@ -14,6 +14,7 @@ import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.level.storage.ValueInputContextHelper;
@@ -224,7 +225,7 @@ public class NMSServerPlayerImpl implements NMSServerPlayer {
             return;
         }
 
-        handle.drop(inventory.removeItem(slot, item.getCount()), flag);
+        handle.drop(inventory.removeItem(slot, item.getCount()), flag, Prediction.SERVER_ONLY);
     }
 
     @Override
