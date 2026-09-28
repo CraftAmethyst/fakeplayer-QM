@@ -18,19 +18,11 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Set up JDK 25 for BuildTools and Maven cache
+      - name: Set up JDK 25 toolchain
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: 'maven'
-
-      - name: Build Spigot 26.1.2
-        run: |
-          mkdir -p build/buildtools
-          cd build/buildtools
-          curl -fsSL -o BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-          java -jar BuildTools.jar --rev 26.1.2 --compile SPIGOT
 
       - name: Restore JDK 21 for Gradle
         uses: actions/setup-java@v4
@@ -43,7 +35,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew :fakeplayer-dist:shadowJar --no-daemon
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
