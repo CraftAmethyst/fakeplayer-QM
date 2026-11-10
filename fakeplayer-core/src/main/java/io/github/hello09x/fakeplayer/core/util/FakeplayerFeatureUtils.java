@@ -23,6 +23,22 @@ public class FakeplayerFeatureUtils {
         }
     }
 
+    /**
+     * Clears the vanilla "changing dimension" flag.
+     * <p>Vanilla only clears it when the client acknowledges the teleport, which fake players never do.
+     * While the flag is set, {@code ServerPlayer#isInvulnerableTo} rejects every damage source, so the
+     * fake player cannot be attacked after a cross-world teleport.</p>
+     */
+    public static void clearChangingDimension(@NotNull Player player) {
+        try {
+            var handle = getHandle(player);
+            if (handle != null) {
+                invokeMethod(handle, "hasChangedDimension", new Class[0]);
+            }
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ignored) {
+        }
+    }
+
     private static void setHandleInvulnerable(@NotNull Player player, boolean invulnerable) {
         try {
             var handle = getHandle(player);

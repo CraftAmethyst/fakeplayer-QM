@@ -33,6 +33,9 @@ public class NMSServerImpl implements NMSServer {
                 new GameProfile(uuid, name),
                 ClientInformation.createDefault()
         );
+        // Fake players never send the client-loaded packet, so mark them loaded explicitly.
+        // Otherwise ServerPlayer#isInvulnerableTo keeps them invulnerable after spawning.
+        handle.setClientLoaded(true);
         return new NMSServerPlayerImpl(handle.getBukkitEntity());
     }
 }

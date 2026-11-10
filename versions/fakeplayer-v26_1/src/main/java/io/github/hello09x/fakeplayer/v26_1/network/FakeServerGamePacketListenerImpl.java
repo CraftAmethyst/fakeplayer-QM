@@ -50,6 +50,17 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
         }
     }
 
+    /**
+     * Fake players have no client, so they never send the {@code ServerboundPlayerLoadedPacket}
+     * that marks the client as loaded. Vanilla treats a player whose client has not loaded as
+     * invulnerable, which makes fake players impossible to attack even when invulnerability is
+     * disabled. Report the fake connection as loaded immediately.
+     */
+    @Override
+    public boolean hasClientLoaded() {
+        return true;
+    }
+
     @Override
     public void send(Packet<?> packet) {
         if (packet instanceof ClientboundCustomPayloadPacket p) {

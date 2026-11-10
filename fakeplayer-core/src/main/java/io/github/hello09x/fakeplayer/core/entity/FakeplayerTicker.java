@@ -3,6 +3,7 @@ package io.github.hello09x.fakeplayer.core.entity;
 import io.github.hello09x.fakeplayer.api.spi.NMSServerPlayer;
 import io.github.hello09x.fakeplayer.core.Main;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerManager;
+import io.github.hello09x.fakeplayer.core.util.FakeplayerFeatureUtils;
 import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -75,6 +76,7 @@ public class FakeplayerTicker extends BukkitRunnable {
         handle.setYo(y);
         handle.setZo(z);
 
+        FakeplayerFeatureUtils.clearChangingDimension(player);
         handle.doTick();
 
         // clearFog 插件会在第一次传送的时候改变了玩家的位置, 因此必须进行一次传送
@@ -85,6 +87,7 @@ public class FakeplayerTicker extends BukkitRunnable {
 
     private void doTick() {
         var handle = this.player.getHandle();
+        FakeplayerFeatureUtils.clearChangingDimension(this.player.getPlayer());
         handle.doTick();
     }
 

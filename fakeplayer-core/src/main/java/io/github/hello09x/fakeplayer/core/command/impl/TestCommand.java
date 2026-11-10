@@ -8,11 +8,13 @@ import io.github.hello09x.fakeplayer.api.spi.ActionSetting;
 import io.github.hello09x.fakeplayer.api.spi.ActionType;
 import io.github.hello09x.fakeplayer.core.Main;
 import io.github.hello09x.fakeplayer.core.translation.FakeplayerTranslator;
+import io.github.hello09x.fakeplayer.core.util.FakeplayerFeatureUtils;
 import io.github.hello09x.fakeplayer.core.util.VersionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockState;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -160,6 +162,8 @@ public class TestCommand extends AbstractCommand {
             fake.setOp(wasOp);
         }
 
+        check(sender, result, "Fake player damage", () -> testDamage(fake));
+
         check(sender, result, "Temporary player removal", () ->
                 require(manager.remove(name, "compatibility self-test complete"), "manager rejected removal"));
 
@@ -191,6 +195,23 @@ public class TestCommand extends AbstractCommand {
             require(target.isDead() || target.getHealth() < health, "target did not take damage");
         } finally {
             target.remove();
+        }
+    }
+
+    private void testDamage(Player fake) {
+        var maxHealth = fake.getAttribute(Attribute.MAX_HEALTH);
+        require(maxHealth != null, "fake player has no max health attribute");
+
+        var wasInvulnerable = FakeplayerFeatureUtils.isInvulnerable(fake);
+        var health = fake.getHealth();
+        try {
+            FakeplayerFeatureUtils.setInvulnerable(fake, false);
+            fake.setHealth(maxHealth.getValue());
+            fake.damage(1.0D);
+            require(fake.getHealth() < maxHealth.getValue(), "fake player did not take damage");
+        } finally {
+            fake.setHealth(health);
+            FakeplayerFeatureUtils.setInvulnerable(fake, wasInvulnerable);
         }
     }
 
