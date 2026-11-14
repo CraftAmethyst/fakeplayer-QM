@@ -41,7 +41,23 @@ public class NMSServerImpl implements NMSServer {
     }
 
     @Override
+    public @NotNull NMSServerPlayer newPlayer(@NotNull UUID uuid, @NotNull String name, @NotNull org.bukkit.Location initialLocation) {
+        var handle = new ServerPlayer(
+                new NMSServerImpl(Bukkit.getServer()).getHandle(),
+                new NMSServerLevelImpl(initialLocation.getWorld()).getHandle(),
+                new GameProfile(uuid, name),
+                ClientInformation.createDefault()
+        );
+        handle.absSnapTo(initialLocation.getX(), initialLocation.getY(), initialLocation.getZ(), initialLocation.getYaw(), initialLocation.getPitch());
+        return new NMSServerPlayerImpl(handle.getBukkitEntity());
+    }
+
+    @Override
     public void removePlayer(@NotNull Player player, @NotNull Object reason) {
+        if (io.github.hello09x.fakeplayer.core.Main.getScheduler().isFolia()) {
+            NMSServer.super.removePlayer(player, reason);
+            return;
+        }
         var handle = ((CraftPlayer) player).getHandle();
         var playerList = ((CraftServer) Bukkit.getServer()).getHandle();
         try {

@@ -26,8 +26,10 @@ extensions.configure<JavaPluginExtension> {
     targetCompatibility = JavaVersion.VERSION_25
 }
 tasks.withType<JavaCompile>().configureEach { options.release.set(21) }
-configurations.named("compileClasspath") {
-    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
+listOf("compileClasspath", "runtimeClasspath", "testCompileClasspath", "testRuntimeClasspath").forEach { name ->
+    configurations.named(name) {
+        attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
+    }
 }
 
 dependencies {

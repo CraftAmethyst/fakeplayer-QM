@@ -2,6 +2,7 @@ package io.github.hello09x.fakeplayer.api.spi;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
+import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -16,6 +17,11 @@ public interface NMSServer {
      * @return 假人
      */
     @NotNull NMSServerPlayer newPlayer(@NotNull UUID uuid, @NotNull String name);
+
+    /** Create in the initial world before the player has an entity scheduler. */
+    default @NotNull NMSServerPlayer newPlayer(@NotNull UUID uuid, @NotNull String name, @NotNull Location initialLocation) {
+        return newPlayer(uuid, name);
+    }
 
     default void removePlayer(@NotNull Player player, @NotNull Object reason) {
         if (reason instanceof Component component) {

@@ -49,10 +49,11 @@ public class ListCommand extends AbstractCommand {
 
                     var partKill = textOfChildren(space(), translatable("fakeplayer.command.list.button.kill", RED)).clickEvent(runCommand("/fp kill " + fakeplayer.getName()));
 
+                    var location = manager.getLocationSnapshot(fakeplayer);
                     return textOfChildren(
                             text(fakeplayer.getName() + " (" + manager.getCreatorName(fakeplayer) + ")", GOLD),
                             text(" - ", GRAY),
-                            text(toLocationString(fakeplayer.getLocation()), WHITE),
+                            text(location == null ? "—" : toLocationString(location), WHITE),
                             partTp,
                             partKill
                     );

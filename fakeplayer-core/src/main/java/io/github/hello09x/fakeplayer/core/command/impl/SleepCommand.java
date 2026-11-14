@@ -25,20 +25,26 @@ public class SleepCommand extends AbstractCommand {
 
     public void sleep(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = getFakeplayer(sender, args);
-        if (!autosleepManager.trySleep(fake, false)) {
-            sender.sendMessage(translatable(
-                    "fakeplayer.command.sleep.error.no-bed",
-                    text(fake.getName(), WHITE)
-            ).color(GRAY));
-        }
+        runForFake(sender, fake, () -> autosleepManager.trySleepAsync(fake, false).whenComplete((slept, error) -> {
+            if (error != null || !Boolean.TRUE.equals(slept)) {
+                reply(sender, translatable(
+                        "fakeplayer.command.sleep.error.no-bed",
+                        text(fake.getName(), WHITE)
+                ).color(GRAY));
+            } else {
+                reply(sender, translatable("fakeplayer.command.generic.success"));
+            }
+        }));
     }
 
     public void wakeup(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var target = getFakeplayer(sender, args);
-        if (!target.isSleeping()) {
-            return;
-        }
+        runForFakeWithSuccess(sender, target, () -> {
+            if (!target.isSleeping()) {
+                return;
+            }
 
-        target.wakeup(true);
+            target.wakeup(true);
+        });
     }
 }

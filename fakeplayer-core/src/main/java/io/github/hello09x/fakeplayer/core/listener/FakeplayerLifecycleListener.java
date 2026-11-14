@@ -48,7 +48,7 @@ public class FakeplayerLifecycleListener implements Listener {
             return;
         }
 
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+        Main.getScheduler().entityLater(player, () -> {
             if (player.isOnline()) {
                 manager.dispatchCommands(player, config.getAfterSpawnCommands());
                 manager.issueCommands(player, config.getSelfCommands());
@@ -68,7 +68,7 @@ public class FakeplayerLifecycleListener implements Listener {
         manager.dispatchCommands(player, config.getPostQuitCommands());
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onAfterQuit(@NotNull PlayerQuitEvent event) {
         var player = event.getPlayer();
         if (this.manager.isNotFake(player)) {
@@ -76,9 +76,7 @@ public class FakeplayerLifecycleListener implements Listener {
             return;
         }
 
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-            manager.dispatchCommands(player, config.getAfterQuitCommands());
-        }, 20);
+        manager.dispatchCommandsLater(player, config.getAfterQuitCommands(), 20);
     }
 
 

@@ -37,3 +37,9 @@ file("versions").listFiles()
     ?.forEach { versionProject ->
         project(":${versionProject.name}").projectDir = versionProject
     }
+
+// Explicitly opt in: the server harness is never part of the distributed plugin.
+if (providers.gradleProperty("foliaSmokeTests").map(String::toBoolean).getOrElse(false)) {
+    include(":folia-smoke-plugin")
+    project(":folia-smoke-plugin").projectDir = file("folia/smoke-plugin")
+}

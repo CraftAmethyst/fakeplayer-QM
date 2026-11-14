@@ -22,11 +22,12 @@ public class DistanceCommand extends AbstractCommand {
      */
     public void distance(@NotNull Player sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = super.getFakeplayer(sender, args);
-        var from = fake.getLocation().toBlockLocation();
         var to = sender.getLocation().toBlockLocation();
+        runForFake(sender, fake, () -> {
+        var from = fake.getLocation().toBlockLocation();
 
         if (!Objects.equals(from.getWorld(), to.getWorld())) {
-            sender.sendMessage(translatable(
+            reply(sender, translatable(
                     "fakeplayer.command.distance.error.too-far",
                     text(fake.getName(), WHITE)
             ));
@@ -38,7 +39,7 @@ public class DistanceCommand extends AbstractCommand {
         var y = Math.abs(from.getBlockY() - to.getBlockY());
         var z = Math.abs(from.getBlockZ() - to.getBlockZ());
 
-        sender.sendMessage(textOfChildren(
+        reply(sender, textOfChildren(
                 translatable(
                         "fakeplayer.command.distance.title",
                         text(fake.getName(), WHITE)
@@ -49,6 +50,7 @@ public class DistanceCommand extends AbstractCommand {
                 translatable("fakeplayer.command.distance.y", GRAY), space(), text(y, WHITE), newline(),
                 translatable("fakeplayer.command.distance.z", GRAY), space(), text(z, WHITE)
         ));
+        });
     }
 
 

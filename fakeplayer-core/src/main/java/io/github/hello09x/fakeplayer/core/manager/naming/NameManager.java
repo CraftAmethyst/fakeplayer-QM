@@ -40,6 +40,7 @@ public class NameManager {
     private final Map<String, NameSource> nameSources = new HashMap<>();
 
     private final String serverId;
+    private final Object profileLock = new Object();
 
     @Inject
     public NameManager(UsedIdRepository legacyUsedIdRepository, FakeplayerProfileRepository profileRepository, FakeplayerConfig config) {
@@ -81,6 +82,10 @@ public class NameManager {
      * @return UUID
      */
     private @NotNull UUID getUUIDFromName(@NotNull String name) {
+        synchronized (profileLock) { return allocateUUIDFromName(name); }
+    }
+
+    private @NotNull UUID allocateUUIDFromName(@NotNull String name) {
         {
             var uuid = profileRepository.selectUUIDByName(name);
             if (uuid != null) {
@@ -151,7 +156,7 @@ public class NameManager {
             var player = Bukkit.getPlayerExact(name);
             if (player != null) {
                 throw new IllegalCustomNameException(
-                        player.isDead()
+                        !Main.getScheduler().isFolia() && player.isDead()
                                 ? translatable("fakeplayer.spawn.error.name.online-dead", text(name, GOLD), text("/fp respawn", DARK_GREEN)).color(RED)
                                 : translatable("fakeplayer.spawn.error.name.online", text(name, GOLD)).color(RED)
                 );
@@ -182,18 +187,22 @@ public class NameManager {
      * @param creator 创建者
      * @return 序列名
      */
-    public @NotNull SequenceName getRegularName(@NotNull CommandSender creator) {
-        var source = config.getNameTemplate();
+    public @NotNull SequenceName getRegularName(@NotNull CommandSender creator) { return getRegularName(creator.getName()); }
+
+    public @NotNull SequenceName getRegularName(@NotNull String creatorName) {
+        var settings = config.snapshot();
+        var source = settings.nameTemplate();
         if (source.isBlank()) {
-            source = creator.getName();
+            source = creatorName;
         }
-        source = source.replace("%c", creator.getName());
-        if (StringUtils.isNotBlank(config.getNamePrefix())) {
-            source = config.getNamePrefix().trim() + source;
+        source = source.replace("%c", creatorName);
+        if (StringUtils.isNotBlank(settings.namePrefix())) {
+            source = settings.namePrefix().trim() + source;
         }
 
         for (int i = 0; i < 10; i++) {
-            var seq = nameSources.computeIfAbsent(source, ignored -> new NameSource(config.getPlayerLimit())).pop();
+            int seq;
+            synchronized (nameSources) { seq = nameSources.computeIfAbsent(source, ignored -> new NameSource(settings.playerLimit())).pop(); }
             var suffix = "_" + (seq + 1);
 
             String name;
@@ -207,7 +216,12 @@ public class NameManager {
                 continue;
             }
 
-            return new SequenceName(source, seq, this.getUUIDFromName(name), name);
+            try {
+                return new SequenceName(source, seq, this.getUUIDFromName(name), name);
+            } catch (RuntimeException error) {
+                unregister(source, seq);
+                throw error;
+            }
         }
 
         String name;
@@ -220,7 +234,7 @@ public class NameManager {
             return new SequenceName("random", 0, this.getUUIDFromName(name), name);
         }
 
-        throw new IllegalStateException("Failed to generate a name for fake player based on creator '%s'".formatted(creator.getName()));
+        throw new IllegalStateException("Failed to generate a name for fake player based on creator '%s'".formatted(creatorName));
     }
 
     /**
@@ -230,7 +244,7 @@ public class NameManager {
      * @param sequence 序列
      */
     public void unregister(@NotNull String group, int sequence) {
-        Optional.ofNullable(nameSources.get(group)).ifPresent(ns -> ns.push(sequence));
+        synchronized (nameSources) { Optional.ofNullable(nameSources.get(group)).ifPresent(ns -> ns.push(sequence)); }
     }
 
     /**

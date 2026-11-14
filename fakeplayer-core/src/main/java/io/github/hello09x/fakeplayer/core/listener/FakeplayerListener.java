@@ -110,6 +110,11 @@ public class FakeplayerListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onKickResult(PlayerKickEvent event) {
+        if (event.isCancelled() && manager.isFake(event.getPlayer())) manager.removalCancelled(event.getPlayer());
+    }
+
     /**
      * 死亡退出游戏
      */
@@ -119,14 +124,15 @@ public class FakeplayerListener implements Listener {
         if (manager.isNotFake(player)) {
             return;
         }
+        manager.publishDead(player);
         if (!config.isKickOnDead()) {
             var creator = manager.getCreator(player);
             if (creator != null) {
-                creator.sendMessage(translatable(
+                Main.getScheduler().sender(creator, () -> creator.sendMessage(translatable(
                         "fakeplayer.listener.death.notify",
                         text(player.getName(), GOLD),
                         text("/fp respawn", DARK_GREEN, UNDERLINED).clickEvent(runCommand("/fp respawn " + player.getName()))
-                ).color(RED));
+                ).color(RED)));
             }
             return;
         }
@@ -143,7 +149,7 @@ public class FakeplayerListener implements Listener {
     /**
      * 退出游戏掉落背包
      */
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void cleanup(@NotNull PlayerQuitEvent event) {
         var target = event.getPlayer();
         if (manager.isNotFake(target)) {
@@ -152,7 +158,7 @@ public class FakeplayerListener implements Listener {
 
         try {
             if (manager.getCreator(target) instanceof Player creator && manager.countByCreator(creator) == 1) {
-                Bukkit.getScheduler().runTaskLater(Main.getInstance(), creator::updateCommands, 1); // 需要下 1 tick 移除后才正确刷新
+                Main.getScheduler().entityLater(creator, creator::updateCommands, 1); // 需要下 1 tick 移除后才正确刷新
             }
         } finally {
             manager.cleanup(target);

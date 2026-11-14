@@ -46,6 +46,12 @@ public class TestCommand extends AbstractCommand {
     }
 
     public void test(@NotNull CommandSender sender, @NotNull CommandArguments args) {
+        var reference = sender instanceof Player player ? player.getLocation().clone() : Bukkit.getWorlds().get(0).getSpawnLocation().clone();
+        reference.getWorld().getChunkAtAsync(reference).thenCompose(ignored -> Main.getScheduler().at(reference, () -> testAt(sender, reference)))
+                .exceptionally(error -> { send(sender, RED, "FAIL: Fixture scheduling - " + describe(error)); return null; });
+    }
+
+    private void testAt(CommandSender sender, Location reference) {
         if (!running.compareAndSet(false, true)) {
             send(sender, YELLOW, "A self-test is already running.");
             return;
@@ -53,7 +59,7 @@ public class TestCommand extends AbstractCommand {
 
         TestFixture fixture;
         try {
-            fixture = TestFixture.create(sender);
+            fixture = TestFixture.create(reference);
         } catch (Throwable throwable) {
             send(sender, RED, "FAIL: World fixture setup - " + describe(throwable));
             log.log(Level.WARNING, "Fakeplayer self-test failed while preparing its world fixture", throwable);
@@ -73,16 +79,17 @@ public class TestCommand extends AbstractCommand {
 
         try {
             manager.spawnAsync(sender, testName, fixture.spawnLocation(), TEST_PLAYER_LIFESPAN_MILLIS)
-                    .whenComplete((fake, throwable) -> Bukkit.getScheduler().runTask(
-                            Main.getInstance(),
-                            () -> {
+                    .whenComplete((fake, throwable) -> Main.getScheduler().at(fixture.spawnLocation(), () -> {
                                 if (throwable != null) {
                                     failSpawn(sender, testName, fixture, throwable);
                                     return;
                                 }
+                                if (!Main.getScheduler().owns(fake)) {
+                                    failSpawn(sender, testName, fixture, new IllegalStateException("Test player moved outside fixture ownership"));
+                                    return;
+                                }
                                 runChecks(sender, fake, testName, initialCount, fixture);
-                            }
-                    ));
+                            }));
         } catch (Throwable throwable) {
             failSpawn(sender, testName, fixture, throwable);
         }
@@ -95,7 +102,7 @@ public class TestCommand extends AbstractCommand {
             translator.reload();
             var translation = translator.translate(
                     "fakeplayer.command.generic.success",
-                    TranslatorUtils.getLocale(sender)
+                    java.util.Locale.ENGLISH
             );
             require(translation != null, "test translation was not found");
         });
@@ -164,20 +171,22 @@ public class TestCommand extends AbstractCommand {
 
         check(sender, result, "Fake player damage", () -> testDamage(fake));
 
-        check(sender, result, "Temporary player removal", () ->
-                require(manager.remove(name, "compatibility self-test complete"), "manager rejected removal"));
-
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-            check(sender, result, "Residual state cleanup", () -> {
-                require(manager.get(name) == null, "temporary player remains in manager");
-                require(Bukkit.getPlayer(fake.getUniqueId()) == null, "temporary player remains online");
-            });
-            check(sender, result, "World fixture restoration", () -> {
-                fixture.restore();
-                require(fixture.isRestored(), "one or more temporary blocks were not restored");
-            });
-            finish(sender, result);
-        }, 5L);
+        manager.removeAsync(name, text("compatibility self-test complete")).whenComplete((removed, error) ->
+                Main.getScheduler().at(fixture.spawnLocation(), () -> {
+                    check(sender, result, "Temporary player removal", () -> {
+                        if (error != null) throw new CompletionException(error);
+                        require(Boolean.TRUE.equals(removed), "manager rejected removal");
+                    });
+                    check(sender, result, "Residual state cleanup", () -> {
+                        require(manager.get(name) == null, "temporary player remains in manager");
+                        require(Bukkit.getPlayer(fake.getUniqueId()) == null, "temporary player remains online");
+                    });
+                    check(sender, result, "World fixture restoration", () -> {
+                        fixture.restore();
+                        require(fixture.isRestored(), "one or more temporary blocks were not restored");
+                    });
+                    finish(sender, result);
+                }));
     }
 
     private void testAttack(Player fake, TestFixture fixture) {
@@ -270,7 +279,7 @@ public class TestCommand extends AbstractCommand {
         send(sender, RED, "FAIL: Temporary player spawn - " + describe(cause));
         log.log(Level.WARNING, "Fakeplayer self-test failed while spawning " + name, cause);
         manager.remove(name, "compatibility self-test failed");
-        fixture.restore();
+        Main.getScheduler().at(fixture.spawnLocation(), fixture::restore);
         running.set(false);
     }
 
@@ -318,7 +327,7 @@ public class TestCommand extends AbstractCommand {
     }
 
     private static void send(CommandSender sender, net.kyori.adventure.text.format.NamedTextColor color, String message) {
-        sender.sendMessage(text("[FakePlayer Test] ", AQUA).append(text(message, color)));
+        Main.getScheduler().sender(sender, () -> sender.sendMessage(text("[FakePlayer Test] ", AQUA).append(text(message, color))));
     }
 
     @FunctionalInterface
@@ -350,13 +359,11 @@ public class TestCommand extends AbstractCommand {
             this.originalStates = originalStates;
         }
 
-        private static TestFixture create(CommandSender sender) {
-            var reference = sender instanceof Player player
-                    ? player.getLocation()
-                    : Bukkit.getWorlds().get(0).getSpawnLocation();
+        private static TestFixture create(Location reference) {
             var world = reference.getWorld();
-            var x = reference.getBlockX();
-            var z = reference.getBlockZ();
+            // Keep all fixture blocks and the attack target inside the scheduled chunk.
+            var x = (reference.getBlockX() & ~15) + 8;
+            var z = (reference.getBlockZ() & ~15) + 8;
             var y = Math.max(world.getMinHeight() + 4, world.getHighestBlockYAt(x, z) + 4);
             y = Math.min(y, world.getMaxHeight() - 5);
 

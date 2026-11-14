@@ -30,13 +30,9 @@ public class InvseeCommand extends AbstractCommand {
      */
     public void invsee(@NotNull Player sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = super.getFakeplayer(sender, args);
-        if (!Objects.equals(sender.getLocation().getWorld(), fake.getLocation().getWorld())) {
-            throw CommandAPI.failWithString(ComponentUtils.toString(
-                    translatable("fakeplayer.command.invsee.error.not-the-same-world"),
-                    TranslatorUtils.getLocale(sender)
-            ));
-        }
-        invseeManager.invsee(sender, fake);
+        invseeManager.invseeAsync(sender, fake).whenComplete((success, error) -> {
+            if (error != null) reply(sender, translatable("fakeplayer.command.generic.error.operation-failed"));
+        });
     }
 
 }

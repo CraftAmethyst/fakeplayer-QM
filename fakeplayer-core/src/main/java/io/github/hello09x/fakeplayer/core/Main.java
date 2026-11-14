@@ -25,6 +25,8 @@ import io.github.hello09x.fakeplayer.core.util.update.UpdateChecker;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import io.github.hello09x.fakeplayer.core.platform.PlatformScheduler;
+import io.github.hello09x.fakeplayer.core.platform.ServerPlatform;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,6 +36,18 @@ public final class Main extends JavaPlugin {
     private static Main instance;
 
     private Injector injector;
+
+    private PlatformScheduler scheduler;
+
+    private io.github.hello09x.fakeplayer.core.platform.ChunkLeases chunkLeases;
+
+    public static @NotNull io.github.hello09x.fakeplayer.core.platform.ChunkLeases getChunkLeases() {
+        return instance.chunkLeases;
+    }
+
+    public static @NotNull PlatformScheduler getScheduler() {
+        return instance.scheduler;
+    }
 
     private long loadAt;
 
@@ -45,10 +59,23 @@ public final class Main extends JavaPlugin {
     public void onLoad() {
         loadAt = System.currentTimeMillis();
         instance = this;
+        scheduler = new PlatformScheduler(this, ServerPlatform.detect());
+        chunkLeases = new io.github.hello09x.fakeplayer.core.platform.ChunkLeases(this, scheduler);
     }
 
     @Override
     public void onEnable() {
+        if (scheduler.isFolia()) {
+            try {
+                io.github.hello09x.fakeplayer.core.platform.FoliaCompatibility.verifyRuntime(
+                        io.github.hello09x.fakeplayer.core.util.VersionUtils.getMinecraftVersion(), getClass().getClassLoader());
+                io.github.hello09x.fakeplayer.core.platform.FoliaWorldPaths.prepare(getServer());
+            } catch (IllegalStateException error) {
+                getLogger().log(java.util.logging.Level.SEVERE, "Folia compatibility check failed before manager initialization", error);
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+        }
         injector = Guice.createInjector(
                 new FakeplayerModule(),
                 new CommandModule(),
@@ -74,11 +101,14 @@ public final class Main extends JavaPlugin {
             manager.registerEvents(injector.getInstance(FakeplayerAutosleepManager.class), this);
             manager.registerEvents(injector.getInstance(FakeplayerReplenishManager.class), this);
             manager.registerEvents(injector.getInstance(InvseeManager.class), this);
+            manager.registerEvents(injector.getInstance(io.github.hello09x.fakeplayer.core.manager.invsee.InventoryEditor.class), this);
+            manager.registerEvents(injector.getInstance(io.github.hello09x.fakeplayer.core.manager.TransferMailbox.class), this);
         }
 
         // Start autosleep scheduler
         injector.getInstance(FakeplayerAutosleepManager.class).startScheduler();
         injector.getInstance(PersistentFakeplayerManager.class).restore();
+        injector.getInstance(PersistentFakeplayerManager.class).start();
 
         {
             var placeholderExpansion = injector.getInstance(FakeplayerPlaceholderExpansion.class);
@@ -129,9 +159,12 @@ public final class Main extends JavaPlugin {
     @Override
     public void onDisable() {
         if (injector != null) {
+            Exceptions.suppress(this, () -> injector.getInstance(io.github.hello09x.fakeplayer.core.manager.invsee.InventoryEditor.class).close());
+            if (scheduler != null) scheduler.close();
             Exceptions.suppress(this, () -> injector.getInstance(PersistentFakeplayerManager.class).save());
             Exceptions.suppress(this, () -> injector.getInstance(FakeplayerAutosleepManager.class).onDisable());
             Exceptions.suppress(this, () -> injector.getInstance(FakeplayerManager.class).onDisable());
+            Exceptions.suppress(this, () -> injector.getInstance(io.github.hello09x.fakeplayer.core.manager.TransferMailbox.class).close());
             Exceptions.suppress(this, () -> injector.getInstance(UsedIdRepository.class).onDisable());
         }
 
@@ -142,6 +175,8 @@ public final class Main extends JavaPlugin {
                 messenger.unregisterOutgoingPluginChannel(this);
             });
         }
+
+        if (scheduler != null) scheduler.close();
     }
 
 }

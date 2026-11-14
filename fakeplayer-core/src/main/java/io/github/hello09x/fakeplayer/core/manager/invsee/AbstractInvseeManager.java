@@ -38,25 +38,13 @@ public abstract class AbstractInvseeManager implements InvseeManager {
 
     @Override
     public boolean invsee(@NotNull Player viewer, @NotNull Player whom) {
-        var fp = fakeplayerList.getByUUID(whom.getUniqueId());
-        if (fp == null) {
-            return false;
-        }
-        if (!viewer.isOp() && !fp.isCreatedBy(viewer)) {
-            return false;
-        }
-        var title = translatable("fakeplayer.manager.inventory.title", text(whom.getName()));
-        var view = this.openInventory(viewer, whom, title);
-        if (view == null) {
-            return false;
-        }
-        whom.getLocation().getWorld().playSound(
-                whom.getLocation(),
-                Sound.BLOCK_CHEST_OPEN,
-                SoundCategory.BLOCKS,
-                0.3F, 1.0F
-        );
-        return true;
+        var result = invseeAsync(viewer, whom);
+        return result.isDone() ? result.getNow(false) : true;
+    }
+
+    @Override
+    public java.util.concurrent.CompletableFuture<Boolean> invseeAsync(Player viewer, Player whom) {
+        return io.github.hello09x.fakeplayer.core.Main.getInjector().getInstance(InventoryEditor.class).open(viewer, whom);
     }
 
     protected abstract @Nullable InventoryView openInventory(
@@ -84,20 +72,4 @@ public abstract class AbstractInvseeManager implements InvseeManager {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void syncInvseeInventory(@NotNull InventoryCloseEvent event) {
-        var holder = event.getInventory().getHolder();
-        if (!(holder instanceof InvseeInventoryHolder invHolder)) {
-            return;
-        }
-
-        var target = Bukkit.getPlayer(invHolder.getTargetId());
-        if (target == null || !manager.isFake(target)) {
-            return;
-        }
-
-        var storageSize = target.getInventory().getStorageContents().length;
-        var contents = Arrays.copyOf(event.getInventory().getContents(), storageSize);
-        target.getInventory().setStorageContents(contents);
-    }
 }

@@ -35,8 +35,12 @@ dependencies {
 }
 
 tasks.named<ProcessResources>("processResources") {
+    inputs.property("foliaSupported", providers.gradleProperty("foliaSupported").orElse("false"))
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {
-        expand(mapOf("revision" to project.version.toString()))
+        expand(mapOf(
+            "revision" to project.version.toString(),
+            "foliaSupported" to providers.gradleProperty("foliaSupported").map { it.toBoolean() }.orElse(false).get(),
+        ))
     }
 }

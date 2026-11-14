@@ -18,24 +18,26 @@ public class SetCommand extends AbstractCommand {
 
     public void set(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var target = super.getFakeplayer(sender, args);
-        var feature = (Feature) Objects.requireNonNull(args.get("feature"));
-        var value = (String) Objects.requireNonNull(args.get("option"));
+        runForFake(sender, target, () -> {
+            var feature = (Feature) Objects.requireNonNull(args.get("feature"));
+            var value = (String) Objects.requireNonNull(args.get("option"));
 
-        var modifier = feature.getModifier();
-        if (modifier == null) {
-            sender.sendMessage(translatable("fakeplayer.command.config.set.error.invalid-key", RED));
-            return;
-        }
+            var modifier = feature.getModifier();
+            if (modifier == null) {
+                reply(sender, translatable("fakeplayer.command.config.set.error.invalid-key", RED));
+                return;
+            }
 
-        modifier.accept(target, value);
-        sender.sendMessage(translatable(
-                "fakeplayer.command.set.success",
-                text(target.getName(), WHITE),
-                translatable(feature, GOLD),
-                text(value, WHITE)
-        ).color(GRAY));
+            modifier.accept(target, value);
+            reply(sender, translatable(
+                    "fakeplayer.command.set.success",
+                    text(target.getName(), WHITE),
+                    translatable(feature, GOLD),
+                    text(value, WHITE)
+            ).color(GRAY));
 
 
+        });
     }
 
 }

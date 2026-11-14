@@ -51,8 +51,24 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
     }
 
     @Override
+    public void onDisconnect(net.minecraft.network.DisconnectionDetails details) {
+        try {
+            super.onDisconnect(details);
+        } finally {
+            manager.nativeDisconnected(this.player.getBukkitEntity());
+        }
+    }
+
+    @Override
     public void send(Packet<?> packet) {
-        if (packet instanceof ClientboundCustomPayloadPacket p) {
+        if (packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerRotationPacket p) {
+            // These versions apply forced rotation only on the client.
+            Main.getScheduler().runEntity(this.player.getBukkitEntity(), () -> {
+                this.player.setYRot(p.yRot());
+                this.player.setXRot(p.xRot());
+                this.player.setYHeadRot(p.yRot());
+            });
+        } else if (packet instanceof ClientboundCustomPayloadPacket p) {
             this.handleCustomPayloadPacket(p);
         } else if (packet instanceof ClientboundSetEntityMotionPacket p) {
             this.handleClientboundSetEntityMotionPacket(p);
@@ -64,7 +80,7 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
      */
     public void handleClientboundSetEntityMotionPacket(@NotNull ClientboundSetEntityMotionPacket packet) {
         if (packet.getId() == this.player.getId() && this.player.hurtMarked) {
-            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+            Main.getScheduler().entity(this.player.getBukkitEntity(), () -> {
                 this.player.hurtMarked = true;
                 this.player.lerpMotion(packet.getXa(), packet.getYa(), packet.getZa());
             });
@@ -97,7 +113,9 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
         }
 
         var message = getDiscardedPayloadData(discardedPayload);
-        recipient.sendPluginMessage(Main.getInstance(), BUNGEE_CORD_CHANNEL, message);
+        Main.getScheduler().runEntity(recipient, () -> {
+            if (recipient.isOnline()) recipient.sendPluginMessage(Main.getInstance(), BUNGEE_CORD_CHANNEL, message);
+        });
     }
 
     private byte[] getDiscardedPayloadData(@NotNull DiscardedPayload payload) {

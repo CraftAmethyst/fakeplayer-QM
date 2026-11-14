@@ -19,11 +19,28 @@ public class NMSNetworkImpl implements NMSNetwork {
     private final FakeConnection connection;
 
     private NMSServerGamePacketListener serverGamePacketListener;
+    private Player joinedPlayer;
+    private Object joinedPlayerList;
 
     public NMSNetworkImpl(
             @NotNull InetAddress address
     ) {
         this.connection = new FakeConnection(address);
+    }
+
+    @Override
+    public void requestDisconnect() {
+        this.connection.disconnect(net.minecraft.network.chat.Component.literal("Fakeplayer plugin disabled"));
+    }
+
+    @Override
+    public void close() {
+        try {
+            this.connection.disconnect(net.minecraft.network.chat.Component.literal("Fakeplayer transport closed"));
+        } finally {
+            if (joinedPlayer != null) io.github.hello09x.fakeplayer.core.platform.FoliaLifecycleHooks.unregisterConnection(
+                    joinedPlayerList, connection, joinedPlayer.getName(), joinedPlayer.getUniqueId());
+        }
     }
 
     @NotNull
@@ -32,14 +49,22 @@ public class NMSNetworkImpl implements NMSNetwork {
             @NotNull Server server,
             @NotNull Player player
     ) {
+        return placeNewPlayer(server, player, null);
+    }
+
+    @Override
+    public @NotNull NMSServerGamePacketListener placeNewPlayer(Server server, Player player, Object savedData) {
         var handle = ((CraftPlayer) player).getHandle();
         var cookie = CommonListenerCookie.createInitial(((CraftPlayer) player).getProfile(), false);
 
-        ((CraftServer) server).getHandle().placeNewPlayer(
-                this.connection,
-                handle,
-                cookie
-        );
+        this.joinedPlayer = player;
+        this.joinedPlayerList = ((CraftServer) server).getHandle();
+        io.github.hello09x.fakeplayer.core.platform.FoliaLifecycleHooks.registerConnection(joinedPlayerList, connection, player);
+        if (io.github.hello09x.fakeplayer.core.Main.getScheduler().isFolia()) {
+            io.github.hello09x.fakeplayer.core.platform.FoliaLifecycleHooks.placeNewPlayer(joinedPlayerList, connection, handle, cookie, player, savedData);
+        } else {
+            ((CraftServer) server).getHandle().placeNewPlayer(this.connection, handle, cookie);
+        }
 
         var listener = new FakeServerGamePacketListenerImpl(
                 ((CraftServer) server).getServer(),
@@ -49,6 +74,12 @@ public class NMSNetworkImpl implements NMSNetwork {
         );
         this.serverGamePacketListener = listener;
         handle.connection = listener;
+        if (io.github.hello09x.fakeplayer.core.Main.getScheduler().isFolia()) {
+            // Regional disconnect cleanup reads player.connection, so the transport must
+            // dispatch disconnects to the same listener rather than the original join listener.
+            this.connection.setupInboundProtocol(net.minecraft.network.protocol.game.GameProtocols.SERVERBOUND_TEMPLATE.bind(
+                    net.minecraft.network.RegistryFriendlyByteBuf.decorator(((CraftServer) server).getServer().registryAccess()), listener), listener);
+        }
         return listener;
     }
 

@@ -11,7 +11,7 @@ public final class VersionUtils {
     }
 
     public static @NotNull String getMinecraftVersion() {
-        return Bukkit.getBukkitVersion().split("-")[0];
+        return Bukkit.getMinecraftVersion();
     }
 
     public static @NotNull String getMinecraftMajorMinor() {

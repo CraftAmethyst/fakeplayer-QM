@@ -16,7 +16,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -39,9 +38,10 @@ public class FakeplayerAutosleepManager implements Listener {
     private static final int BED_SEARCH_HEIGHT = 3;
 
     private final FakeplayerManager manager;
-    private final Set<UUID> autosleepPlayers = new HashSet<>();
-    private final Set<UUID> noBedNotifiedPlayers = new HashSet<>();
-    private BukkitTask task;
+    private final Set<UUID> autosleepPlayers = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final Set<UUID> noBedNotifiedPlayers = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final Set<UUID> pendingSleep = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private io.github.hello09x.fakeplayer.core.platform.TaskHandle task;
 
     @Inject
     public FakeplayerAutosleepManager(FakeplayerManager manager) {
@@ -87,17 +87,33 @@ public class FakeplayerAutosleepManager implements Listener {
             return;
         }
 
-        long time = world.getTime();
-        // Night time is from 12542 to 23458 ticks
+        for (var fake : manager.getAll()) {
+            Main.getScheduler().runEntity(fake, () -> {
+                if (fake.getWorld().equals(world)) checkAndSleep(fake);
+            });
+        }
+    }
+
+    private void checkAndSleep(Player fake) {
+        if (!fake.isOnline() || !isAutosleep(fake) || fake.isSleeping()) return;
+        var world = fake.getWorld();
+        if (world.getEnvironment() != World.Environment.NORMAL) return;
+        var time = world.getTime();
         if (time < 12542 || time > 23458) {
-            noBedNotifiedPlayers.clear();
+            noBedNotifiedPlayers.remove(fake.getUniqueId());
             return;
         }
+        trySleepAsync(fake, true).exceptionally(error -> {
+            Main.getInstance().getLogger().log(java.util.logging.Level.WARNING, "Cannot prepare nearby beds for " + fake.getName(), error);
+            return false;
+        });
+    }
 
-        // Check all fakeplayers in this world with autosleep enabled
-        for (Player fake : manager.getAll(fake -> fake.getWorld().equals(world) && isAutosleep(fake) && !fake.isSleeping())) {
-            trySleep(fake, true);
-        }
+    public java.util.concurrent.CompletableFuture<Boolean> trySleepAsync(Player fake, boolean notifyCreator) {
+        if (!pendingSleep.add(fake.getUniqueId())) return java.util.concurrent.CompletableFuture.completedFuture(false);
+        return io.github.hello09x.fakeplayer.core.platform.NearbyBlocks.use(fake, BED_SEARCH_RADIUS + 1,
+                () -> fake.isOnline() && !fake.isDead() && trySleep(fake, notifyCreator))
+                .whenComplete((success, error) -> pendingSleep.remove(fake.getUniqueId()));
     }
 
     public boolean trySleep(@NotNull Player fake, boolean notifyCreator) {
@@ -142,6 +158,7 @@ public class FakeplayerAutosleepManager implements Listener {
     }
 
     private Block getBedHead(@NotNull Block block) {
+        if (!Main.getScheduler().owns(block.getLocation())) return null;
         if (!(block.getBlockData() instanceof Bed data)) {
             return null;
         }
@@ -151,6 +168,7 @@ public class FakeplayerAutosleepManager implements Listener {
         }
 
         var head = block.getRelative(data.getFacing());
+        if (!Main.getScheduler().owns(head.getLocation())) return null;
         return head.getBlockData() instanceof Bed headData && headData.getPart() == Bed.Part.HEAD
                 ? head
                 : null;
@@ -163,10 +181,10 @@ public class FakeplayerAutosleepManager implements Listener {
 
         CommandSender creator = manager.getCreator(fake);
         if (creator != null) {
-            creator.sendMessage(translatable(
+            Main.getScheduler().sender(creator, () -> creator.sendMessage(translatable(
                     "fakeplayer.command.sleep.error.no-bed",
                     text(fake.getName(), WHITE)
-            ).color(GRAY));
+            ).color(GRAY)));
         }
     }
 
@@ -178,17 +196,13 @@ public class FakeplayerAutosleepManager implements Listener {
             return;
         }
 
-        task = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
-            if (autosleepPlayers.isEmpty()) {
-                return;
-            }
-            for (World world : Bukkit.getWorlds()) {
-                if (world.getEnvironment() != World.Environment.NORMAL) {
-                    continue;
+        task = Main.getScheduler().globalTimer(() -> {
+            for (var fake : manager.getAll()) {
+                if (autosleepPlayers.contains(fake.getUniqueId())) {
+                    Main.getScheduler().runEntity(fake, () -> checkAndSleep(fake));
                 }
-                checkAndSleep(world);
             }
-        }, 100L, 100L); // Check every 5 seconds (100 ticks)
+        }, 100, 100);
     }
 
     public void onDisable() {

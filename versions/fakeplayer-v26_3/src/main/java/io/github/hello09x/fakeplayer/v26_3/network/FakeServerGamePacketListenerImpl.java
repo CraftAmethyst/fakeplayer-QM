@@ -61,6 +61,15 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
     }
 
     @Override
+    public void onDisconnect(net.minecraft.network.DisconnectionDetails details) {
+        try {
+            super.onDisconnect(details);
+        } finally {
+            manager.nativeDisconnected(this.player.getBukkitEntity());
+        }
+    }
+
+    @Override
     public void send(Packet<?> packet) {
         if (packet instanceof ClientboundCustomPayloadPacket p) {
             this.handleCustomPayloadPacket(p);
@@ -74,7 +83,7 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
      */
     public void handleClientboundSetEntityMotionPacket(@NotNull ClientboundSetEntityMotionPacket packet) {
         if (packet.id() == this.player.getId() && this.player.syncVelocity) {
-            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+            Main.getScheduler().entity(this.player.getBukkitEntity(), () -> {
                 this.player.syncVelocity = true;
                 var movement = packet.movement();
                 this.player.lerpMotion(movement);
@@ -108,7 +117,9 @@ public class FakeServerGamePacketListenerImpl extends ServerGamePacketListenerIm
         }
 
         var message = getDiscardedPayloadData(discardedPayload);
-        recipient.sendPluginMessage(Main.getInstance(), BUNGEE_CORD_CHANNEL, message);
+        Main.getScheduler().runEntity(recipient, () -> {
+            if (recipient.isOnline()) recipient.sendPluginMessage(Main.getInstance(), BUNGEE_CORD_CHANNEL, message);
+        });
     }
 
     private byte[] getDiscardedPayloadData(@NotNull DiscardedPayload payload) {

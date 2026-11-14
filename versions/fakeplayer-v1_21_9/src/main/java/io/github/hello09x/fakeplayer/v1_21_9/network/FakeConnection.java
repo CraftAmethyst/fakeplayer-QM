@@ -26,16 +26,28 @@ public class FakeConnection extends Connection {
     }
 
     @Override
+    public void tick() {
+        // Folia registers virtual transports with its regional connection loop.
+        // The entity ticker owns doTick; the clientless connection must not tick it again.
+        if (!Main.getScheduler().isFolia()) super.tick();
+    }
+
+    @Override
     public boolean isConnected() {
-        return true;
+        return this.channel != null && this.channel.isActive();
     }
 
     @Override
     public void send(Packet<?> packet, @Nullable ChannelFutureListener channelfuturelistener) {
+        if (channelfuturelistener != null) {
+            try { channelfuturelistener.operationComplete(this.channel.newSucceededFuture()); }
+            catch (Exception error) { log.log(java.util.logging.Level.WARNING, "Virtual packet completion failed", error); }
+        }
     }
 
     @Override
     public void send(Packet<?> packet, @Nullable ChannelFutureListener channelfuturelistener, boolean flag) {
+        send(packet, channelfuturelistener);
     }
 
 

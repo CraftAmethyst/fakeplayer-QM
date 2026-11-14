@@ -156,7 +156,7 @@ public class FakeplayerReplenishManager implements Listener {
         var requires = item.clone();
         item = null;    // 以防下面的代码用到了这个值
 
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+        Main.getScheduler().entityLater(target, () -> {
             if (!target.isOnline()) {
                 return;
             }
@@ -166,12 +166,13 @@ public class FakeplayerReplenishManager implements Listener {
             }
 
             if (!this.replenishFromInventory(target, slot, requires)) {
-                if (Optional.ofNullable(manager.getCreator(target))
-                        .filter(creator -> creator.hasPermission(Permission.replenishFromChest))
-                        .isPresent()
-                ) {
-                    this.replenishFromNearbyChest(target, slot, requires);
-                }
+                var creator = manager.getCreator(target);
+                if (creator != null) Main.getScheduler().callSender(creator, () -> creator.hasPermission(Permission.replenishFromChest))
+                        .thenAccept(allowed -> {
+                            if (allowed) Main.getScheduler().runEntity(target, () -> {
+                                if (target.isOnline() && target.getInventory().getItem(slot).getType().isAir()) replenishFromNearbyChest(target, slot, requires);
+                            });
+                        });
             }
 
         }, 1);  // delay 1 是因为要等手上的物品在此 tick 消耗完
@@ -206,7 +207,25 @@ public class FakeplayerReplenishManager implements Listener {
      * @param item   需要补货的物品
      */
     public void replenishFromNearbyChest(@NotNull Player target, @NotNull EquipmentSlot slot, @NotNull ItemStack item) {
-        var blocks = BlockUtils.getNearbyBlocks(target.getLocation(), 4, Material.CHEST);
+        var expected = item.clone();
+        io.github.hello09x.fakeplayer.core.platform.NearbyBlocks.useAsync(target, 5, () -> {
+            if (target.isOnline() && isReplenish(target) && target.getInventory().getItem(slot).getType().isAir()) {
+                return replenishFromOwnedChest(target, slot, expected);
+            }
+            return java.util.concurrent.CompletableFuture.completedFuture(false);
+        }).exceptionally(error -> {
+            Main.getInstance().getLogger().log(java.util.logging.Level.WARNING, "Cannot prepare nearby chests for " + target.getName(), error);
+            return null;
+        });
+    }
+
+    private java.util.concurrent.CompletableFuture<Boolean> replenishFromOwnedChest(Player target, EquipmentSlot slot, ItemStack item) {
+        var blocks = new java.util.ArrayList<org.bukkit.block.Block>();
+        var center = target.getLocation().getBlock();
+        for (int x = -4; x <= 4; x++) for (int y = -4; y <= 4; y++) for (int z = -4; z <= 4; z++) {
+            var block = center.getRelative(x, y, z);
+            if (Main.getScheduler().owns(block.getLocation()) && block.getType() == Material.CHEST) blocks.add(block);
+        }
         for (var block : blocks) {
             var openEvent = new PlayerInteractEvent(
                     target,
@@ -220,20 +239,26 @@ public class FakeplayerReplenishManager implements Listener {
                 continue;
             }
 
-            if (target.openInventory(((Chest) block.getState()).getBlockInventory()) == null) {
+            var opened = target.openInventory(((Chest) block.getState()).getBlockInventory());
+            if (opened == null) {
                 continue;
             }
 
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            return Main.getScheduler().callEntityLater(target, 20, () -> {
+                if (!target.isOnline() || !isReplenish(target) || !target.getInventory().getItem(slot).getType().isAir()) return false;
                 var view = target.getOpenInventory();
                 var inv = view.getTopInventory();
+                if (!inv.equals(opened.getTopInventory())) return false;
+                if (inv.getLocation() != null && !Main.getScheduler().owns(inv.getLocation())) return false;
                 if (inv.getType() != InventoryType.CHEST) {
                     // 被其他插件取消了, 变成打开自己的背包了
-                    return;
+                    return false;
                 }
+                boolean replenished = false;
                 for (int i = inv.getSize() - 1; i >= 0; i--) {
                     var replacement = inv.getItem(i);
                     if (replacement != null && replacement.isSimilar(item)) {
+                        replacement = replacement.clone();
                         var event = new InventoryClickEvent(
                                 view,
                                 InventoryType.SlotType.CONTAINER,
@@ -246,15 +271,18 @@ public class FakeplayerReplenishManager implements Listener {
                             break;
                         }
 
+                        if (!target.getInventory().getItem(slot).getType().isAir() || !replacement.equals(inv.getItem(i))) break;
                         target.getInventory().setItem(slot, replacement);
                         inv.setItem(i, null);
+                        replenished = true;
                         break;
                     }
                 }
                 target.closeInventory(InventoryCloseEvent.Reason.PLAYER);
-            }, 20);
-            return;
+                return replenished;
+            });
         }
+        return java.util.concurrent.CompletableFuture.completedFuture(false);
     }
 
     /**

@@ -17,25 +17,17 @@ public class ExpmeCommand extends AbstractCommand {
 
     public void expme(@NotNull Player sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = getFakeplayer(sender, args);
-        var exp = ExperienceUtils.getExp(fake);
-
-        if (exp == 0) {
-            sender.sendMessage(
-                    translatable(
-                            "fakeplayer.command.expme.error.non-experience",
-                            text(fake.getName(), WHITE)
-                    ).color(GRAY)
-            );
-            return;
-        }
-
-        ExperienceUtils.clean(fake);
-        sender.giveExp(exp, false);
-        sender.sendMessage(translatable(
-                "fakeplayer.command.expme.success",
-                text(fake.getName(), WHITE),
-                text(exp, DARK_GREEN)
-        ).color(GRAY));
+        var mailbox = io.github.hello09x.fakeplayer.core.Main.getInjector().getInstance(io.github.hello09x.fakeplayer.core.manager.TransferMailbox.class);
+        io.github.hello09x.fakeplayer.core.Main.getScheduler().callEntity(fake, () -> mailbox.transferExperience(fake, sender.getUniqueId()))
+                .thenCompose(exp -> io.github.hello09x.fakeplayer.core.Main.getScheduler().callEntity(sender, () -> {
+                    mailbox.deliver(sender);
+                    if (exp == 0) reply(sender, translatable("fakeplayer.command.expme.error.non-experience", text(fake.getName(), WHITE)).color(GRAY));
+                    else reply(sender, translatable("fakeplayer.command.expme.success", text(fake.getName(), WHITE), text(exp, DARK_GREEN)).color(GRAY));
+                    return exp;
+                })).exceptionally(error -> {
+                    reply(sender, translatable("fakeplayer.command.generic.error.operation-failed"));
+                    return null;
+                });
     }
 
 

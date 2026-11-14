@@ -37,46 +37,108 @@ public class PersistentFakeplayerManager {
         this.file = new File(Main.getInstance().getDataFolder(), "persistent-fakeplayers.yml");
     }
 
-    public void save() {
-        if (!config.isPersistData()) {
-            if (file.exists() && !file.delete()) {
-                log.warning("Failed to delete persistent fakeplayer file: " + file);
+    /** Published only by the player's owner. No live entity is read by the writer. */
+    private record SavedPlayer(String name, UUID uuid, String creatorName, UUID creatorUuid,
+                               String world, double x, double y, double z, float yaw, float pitch,
+                               int heldSlot, Map<Feature, String> features,
+                               io.github.hello09x.fakeplayer.core.platform.FoliaPlayerData.Snapshot nativeData) {}
+
+    private final java.util.concurrent.ConcurrentMap<UUID, SavedPlayer> snapshots = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ExecutorService writer = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        var thread = new Thread(r, "fakeplayer-persistence");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    public void capture(Player player) {
+        if (!manager.isFake(player)) return;
+        var location = player.getLocation();
+        var features = new EnumMap<Feature, String>(Feature.class);
+        for (var feature : Feature.values()) {
+            if (feature.hasDetector()) features.put(feature, feature.getDetector().apply(player));
+        }
+        snapshots.put(player.getUniqueId(), new SavedPlayer(player.getName(), player.getUniqueId(),
+                Optional.ofNullable(manager.getCreatorName(player)).orElse("CONSOLE"), manager.getCreatorUuid(player),
+                location.getWorld().getName(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch(),
+                player.getInventory().getHeldItemSlot(), Map.copyOf(features),
+                Main.getScheduler().isFolia() && config.isPersistData()
+                        ? io.github.hello09x.fakeplayer.core.platform.FoliaPlayerData.capture(player) : null));
+    }
+
+    /** Ordered after previous native writes, so a quick rejoin cannot read stale data. */
+    public java.util.concurrent.CompletableFuture<Object> readNative(UUID id, String name) {
+        return java.util.concurrent.CompletableFuture.supplyAsync(
+                () -> io.github.hello09x.fakeplayer.core.platform.FoliaPlayerData.requiresManualLoad() && config.isPersistData()
+                        ? io.github.hello09x.fakeplayer.core.platform.FoliaPlayerData.read(id, name) : null, writer);
+    }
+
+    public void forget(UUID uuid) {
+        if (!Bukkit.getServer().isStopping()) {
+            var removed = snapshots.remove(uuid);
+            if (removed != null && removed.nativeData() != null) {
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try { removed.nativeData().write(); }
+                    catch (IOException error) { throw new java.io.UncheckedIOException(error); }
+                }, writer).exceptionally(error -> {
+                    log.log(java.util.logging.Level.SEVERE, "Failed to save departing fakeplayer " + uuid, error);
+                    return null;
+                });
             }
-            return;
-        }
-
-        var data = new YamlConfiguration();
-        var players = manager.getAll();
-        for (int i = 0; i < players.size(); i++) {
-            save(data.createSection("fakeplayers." + i), players.get(i));
-        }
-
-        try {
-            data.save(file);
-        } catch (IOException e) {
-            log.warning("Failed to save persistent fakeplayers: " + e.getMessage());
         }
     }
 
-    private void save(@NotNull ConfigurationSection section, @NotNull Player player) {
-        var location = player.getLocation();
-        section.set("name", player.getName());
-        section.set("uuid", player.getUniqueId().toString());
-        section.set("creator.name", Optional.ofNullable(manager.getCreatorName(player)).orElse("CONSOLE"));
-        section.set("creator.uuid", stringify(manager.getCreatorUuid(player)));
-        section.set("world", location.getWorld().getName());
-        section.set("x", location.getX());
-        section.set("y", location.getY());
-        section.set("z", location.getZ());
-        section.set("yaw", location.getYaw());
-        section.set("pitch", location.getPitch());
-        section.set("held-slot", player.getInventory().getHeldItemSlot());
+    public java.util.concurrent.CompletableFuture<Void> saveAsync() {
+        var saved = java.util.List.copyOf(snapshots.values());
+        var enabled = config.isPersistData();
+        return java.util.concurrent.CompletableFuture.runAsync(() -> write(saved, enabled), writer);
+    }
 
-        var features = section.createSection("features");
-        for (var feature : Feature.values()) {
-            if (feature.hasDetector()) {
-                features.set(feature.name(), feature.getDetector().apply(player));
+    public void start() {
+        Main.getScheduler().globalTimer(() -> saveAsync().exceptionally(error -> {
+            log.log(java.util.logging.Level.SEVERE, "Failed to checkpoint persistent fakeplayers", error);
+            return null;
+        }), 1200, 1200);
+    }
+
+    /** Shutdown waits only for serial file IO, never for a region or entity task. */
+    public void save() {
+        try { saveAsync().join(); }
+        finally { writer.shutdown(); }
+    }
+
+    private void write(java.util.List<SavedPlayer> saved, boolean enabled) {
+        try {
+            if (!enabled) {
+                java.nio.file.Files.deleteIfExists(file.toPath());
+                return;
             }
+            var data = new YamlConfiguration();
+            for (int i = 0; i < saved.size(); i++) {
+                var player = saved.get(i);
+                if (player.nativeData() != null) player.nativeData().write();
+                var section = data.createSection("fakeplayers." + i);
+                section.set("name", player.name());
+                section.set("uuid", player.uuid().toString());
+                section.set("creator.name", player.creatorName());
+                section.set("creator.uuid", stringify(player.creatorUuid()));
+                section.set("world", player.world());
+                section.set("x", player.x()); section.set("y", player.y()); section.set("z", player.z());
+                section.set("yaw", player.yaw()); section.set("pitch", player.pitch());
+                section.set("held-slot", player.heldSlot());
+                var features = section.createSection("features");
+                player.features().forEach((key, value) -> features.set(key.name(), value));
+            }
+            java.nio.file.Files.createDirectories(file.toPath().getParent());
+            var temporary = java.nio.file.Files.createTempFile(file.toPath().getParent(), "persistent-", ".yml");
+            try {
+                data.save(temporary.toFile());
+                try { java.nio.file.Files.move(temporary, file.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING); }
+                catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                    java.nio.file.Files.move(temporary, file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally { java.nio.file.Files.deleteIfExists(temporary); }
+        } catch (IOException error) {
+            throw new java.io.UncheckedIOException("Failed to save persistent fakeplayers", error);
         }
     }
 
@@ -113,12 +175,7 @@ public class PersistentFakeplayerManager {
             if (manager.isFake(online)) {
                 return;
             }
-            if (!online.getUniqueId().equals(uuid) && online.getAddress() != null) {
-                log.warning("Skipped persistent fakeplayer '%s': a player with the same name is already online".formatted(name));
-                return;
-            }
-            online.kick(net.kyori.adventure.text.Component.text(FakeplayerManager.REMOVAL_REASON_PREFIX + "stale persistent fakeplayer"));
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> restore(section), 1);
+            log.warning("Skipped persistent fakeplayer '%s': a player with this name is already online".formatted(name));
             return;
         }
 
@@ -146,7 +203,7 @@ public class PersistentFakeplayerManager {
                 loadFeatures(section.getConfigurationSection("features")),
                 section.getInt("held-slot", 0)
         ).exceptionally(throwable -> {
-            log.warning("Failed to restore persistent fakeplayer '%s': %s".formatted(name, throwable.getMessage()));
+            log.log(java.util.logging.Level.WARNING, "Failed to restore persistent fakeplayer '" + name + "'", throwable);
             return null;
         });
     }

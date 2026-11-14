@@ -47,20 +47,18 @@ public class ConfigCommand extends AbstractCommand {
         }
 
         var option = (String) Objects.requireNonNull(args.get("option"));
-        featureManager.setFeature(sender, feature, option);
-        sender.sendMessage(translatable(
-                "fakeplayer.command.config.set.success",
-                translatable(feature.translationKey(), GOLD),
-                text(option, WHITE)
-        ).color(GRAY));
+        Main.getScheduler().async(() -> { featureManager.setFeature(sender, feature, option); return null; })
+                .whenComplete((ignored, error) -> reply(sender, error == null ? translatable(
+                        "fakeplayer.command.config.set.success", translatable(feature.translationKey(), GOLD), text(option, WHITE)).color(GRAY)
+                        : translatable("fakeplayer.command.generic.error.operation-failed")));
     }
 
     /**
      * 获取所有配置
      */
     public void listConfig(@NotNull Player sender, @NotNull CommandArguments args) {
-        CompletableFuture.runAsync(() -> {
-            var lines = featureManager.getFeatures(sender).values().stream().map(feature -> textOfChildren(
+        featureManager.getFeaturesAsync(sender).thenAccept(features -> {
+            var lines = features.values().stream().map(feature -> textOfChildren(
                     translatable(feature.key(), GOLD),
                     text(": ", GRAY),
                     join(separator(space()), feature.key().getOptions().stream().map(option -> {
@@ -73,7 +71,7 @@ public class ConfigCommand extends AbstractCommand {
                     }).toList())
             )).toList();
             var message = join(separator(newline()), lines);
-            Bukkit.getScheduler().runTask(Main.getInstance(), () -> sender.sendMessage(message));
+            Main.getScheduler().sender(sender, () -> sender.sendMessage(message));
         });
     }
 

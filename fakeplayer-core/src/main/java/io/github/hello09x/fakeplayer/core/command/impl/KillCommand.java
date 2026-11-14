@@ -21,21 +21,22 @@ public class KillCommand extends AbstractCommand {
         var fakes = super.getFakeplayers(sender, args);
 
         if (fakes.isEmpty()) {
-            sender.sendMessage(translatable("fakeplayer.command.kill.error.non-removed", GRAY));
+            reply(sender, translatable("fakeplayer.command.kill.error.non-removed", GRAY));
             return;
         }
 
-        var names = new StringJoiner(", ");
-        for (var fake : fakes) {
-            if (manager.remove(fake.getName(), "command kill")) {
-                names.add(fake.getName());
-            }
-        }
-        sender.sendMessage(textOfChildren(
-                translatable("fakeplayer.command.kill.success.removed", GRAY),
-                space(),
-                text(names.toString())
-        ));
+        var operations = fakes.stream().map(fake -> manager.removeAsync(fake.getName(), text("command kill"))
+                .thenApply(removed -> removed ? fake.getName() : null)).toList();
+        java.util.concurrent.CompletableFuture.allOf(operations.toArray(java.util.concurrent.CompletableFuture[]::new))
+                .whenComplete((ignored, error) -> {
+                    if (error != null) {
+                        reply(sender, translatable("fakeplayer.command.generic.error.operation-failed"));
+                        return;
+                    }
+                    var names = new StringJoiner(", ");
+                    operations.forEach(operation -> { var name = operation.getNow(null); if (name != null) names.add(name); });
+                    reply(sender, textOfChildren(translatable("fakeplayer.command.kill.success.removed", GRAY), space(), text(names.toString())));
+                });
     }
 
 

@@ -22,8 +22,11 @@ public class FakeplayerList {
      *
      * @param player 假人
      */
-    public void add(@NotNull Fakeplayer player) {
-        this.playersByName.put(player.getName(), player);
+    public synchronized void add(@NotNull Fakeplayer player) {
+        if (playersByName.containsKey(player.getName().toLowerCase(Locale.ROOT)) || playersByUUID.containsKey(player.getUUID())) {
+            throw new IllegalStateException("Fake player name or UUID already reserved: " + player.getName());
+        }
+        this.playersByName.put(player.getName().toLowerCase(Locale.ROOT), player);
         this.playersByUUID.put(player.getUUID(), player);
         this.playersByCreator.computeIfAbsent(player.getCreatorName(), key -> new LinkedList<>()).add(player);
     }
@@ -34,8 +37,8 @@ public class FakeplayerList {
      * @param name 名称
      * @return 假人
      */
-    public @Nullable Fakeplayer getByName(@NotNull String name) {
-        return this.playersByName.get(name);
+    public synchronized @Nullable Fakeplayer getByName(@NotNull String name) {
+        return this.playersByName.get(name.toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -44,7 +47,7 @@ public class FakeplayerList {
      * @param uuid UUID
      * @return 假人
      */
-    public @Nullable Fakeplayer getByUUID(@NotNull UUID uuid) {
+    public synchronized @Nullable Fakeplayer getByUUID(@NotNull UUID uuid) {
         return this.playersByUUID.get(uuid);
     }
 
@@ -54,8 +57,8 @@ public class FakeplayerList {
      * @param creator 创建者
      * @return 假人
      */
-    public @NotNull @Unmodifiable List<Fakeplayer> getByCreator(@NotNull String creator) {
-        return Optional.ofNullable(this.playersByCreator.get(creator)).map(Collections::unmodifiableList).orElse(Collections.emptyList());
+    public synchronized @NotNull @Unmodifiable List<Fakeplayer> getByCreator(@NotNull String creator) {
+        return List.copyOf(this.playersByCreator.getOrDefault(creator, List.of()));
     }
 
     /**
@@ -63,10 +66,14 @@ public class FakeplayerList {
      *
      * @param player 假人
      */
-    public void remove(@NotNull Fakeplayer player) {
-        this.playersByName.remove(player.getName());
-        this.playersByUUID.remove(player.getUUID());
-        Optional.ofNullable(this.playersByCreator.get(player.getCreatorName())).map(players -> players.remove(player));
+    public synchronized void remove(@NotNull Fakeplayer player) {
+        this.playersByName.remove(player.getName().toLowerCase(Locale.ROOT), player);
+        this.playersByUUID.remove(player.getUUID(), player);
+        var players = this.playersByCreator.get(player.getCreatorName());
+        if (players != null) {
+            players.remove(player);
+            if (players.isEmpty()) this.playersByCreator.remove(player.getCreatorName());
+        }
     }
 
     /**
@@ -75,7 +82,7 @@ public class FakeplayerList {
      * @param uuid UUID
      * @return 被移除的假人
      */
-    public @Nullable Fakeplayer removeByUUID(@NotNull UUID uuid) {
+    public synchronized @Nullable Fakeplayer removeByUUID(@NotNull UUID uuid) {
         var player = getByUUID(uuid);
         if (player == null) {
             return null;
@@ -90,7 +97,7 @@ public class FakeplayerList {
      * @param creator 玩家
      * @return 数量
      */
-    public int countByCreator(@NotNull String creator) {
+    public synchronized int countByCreator(@NotNull String creator) {
         return Optional
                 .ofNullable(this.playersByCreator.get(creator))
                 .map(List::size)
@@ -102,7 +109,7 @@ public class FakeplayerList {
      *
      * @return 假人
      */
-    public @NotNull @Unmodifiable List<Fakeplayer> getAll() {
+    public synchronized @NotNull @Unmodifiable List<Fakeplayer> getAll() {
         return List.copyOf(this.playersByUUID.values());
     }
 
@@ -122,10 +129,10 @@ public class FakeplayerList {
     }
 
     public @NotNull Stream<Fakeplayer> stream() {
-        return this.playersByUUID.values().stream();
+        return getAll().stream();
     }
 
-    public int getSize() {
+    public synchronized int getSize() {
         return this.playersByUUID.size();
     }
 

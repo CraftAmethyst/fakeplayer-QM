@@ -37,7 +37,8 @@ public class DebugCommand {
 
         var msg = ByteStreams.newDataOutput();
         msg.writeUTF(message);
-        player.sendPluginMessage(Main.getInstance(), channel, msg.toByteArray());
+        var bytes = msg.toByteArray();
+        Main.getScheduler().runEntity(player, () -> player.sendPluginMessage(Main.getInstance(), channel, bytes));
     }
 
 }

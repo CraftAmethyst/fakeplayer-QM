@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
+import io.github.hello09x.fakeplayer.core.platform.PlatformScheduler;
 
 public class FakeplayerModule extends AbstractModule {
 
@@ -30,6 +31,7 @@ public class FakeplayerModule extends AbstractModule {
     @Override
     protected void configure() {
         super.bind(Plugin.class).toInstance(Main.getInstance());
+        super.bind(PlatformScheduler.class).toInstance(Main.getScheduler());
     }
 
     @Provides
@@ -54,6 +56,8 @@ public class FakeplayerModule extends AbstractModule {
         var bridge = ServiceLoader
                 .load(NMSBridge.class, NMSBridge.class.getClassLoader())
                 .stream()
+                .filter(provider -> !Main.getScheduler().isFolia() || provider.type().getName().equals(
+                        io.github.hello09x.fakeplayer.core.platform.FoliaCompatibility.adapterClass(VersionUtils.getMinecraftVersion())))
                 .map(ServiceLoader.Provider::get)
                 .filter(NMSBridge::isSupported)
                 .findAny()

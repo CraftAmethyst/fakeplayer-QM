@@ -15,6 +15,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+import static net.kyori.adventure.text.Component.translatable;
+
 @Singleton
 public class RotationCommand extends AbstractCommand {
 
@@ -24,8 +26,10 @@ public class RotationCommand extends AbstractCommand {
     @SuppressWarnings("UnstableApiUsage")
     public void lookAt(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = getFakeplayer(sender, args);
-        var location = Objects.requireNonNull((Location) args.get("location"));
-        fake.lookAt(location, LookAnchor.EYES);
+        runForFakeWithSuccess(sender, fake, () -> {
+            var location = Objects.requireNonNull((Location) args.get("location"));
+            fake.lookAt(location, LookAnchor.EYES);
+        });
     }
 
     /**
@@ -34,17 +38,24 @@ public class RotationCommand extends AbstractCommand {
     public CommandExecutor look(@NotNull Direction direction) {
         return (sender, args) -> {
             var fake = getFakeplayer(sender, args);
-            look(fake, direction);
+            runForFakeWithSuccess(sender, fake, () -> {
+                look(fake, direction);
+            });
         };
     }
 
     @SuppressWarnings("UnstableApiUsage")
     public void lookMe(@NotNull Player sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
+        var origin = sender.getEyeLocation().clone();
         var fake = getFakeplayer(sender, args);
-        if (!Objects.equals(fake.getWorld(), sender.getWorld())) {
-            return;
-        }
-        fake.lookAt(sender.getEyeLocation(), LookAnchor.EYES);
+        runForFake(sender, fake, () -> {
+            if (!Objects.equals(fake.getWorld(), origin.getWorld())) {
+                reply(sender, translatable("fakeplayer.command.generic.error.operation-failed"));
+                return;
+            }
+            fake.lookAt(origin, LookAnchor.EYES);
+            reply(sender, translatable("fakeplayer.command.generic.success"));
+        });
     }
 
     /**
@@ -77,7 +88,9 @@ public class RotationCommand extends AbstractCommand {
     public CommandExecutor turn(float yaw, float pitch) {
         return (sender, args) -> {
             var fake = getFakeplayer(sender, args);
-            this.turn(fake, yaw, pitch);
+            runForFakeWithSuccess(sender, fake, () -> {
+                this.turn(fake, yaw, pitch);
+            });
         };
     }
 
@@ -86,8 +99,10 @@ public class RotationCommand extends AbstractCommand {
      */
     public void turnTo(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = getFakeplayer(sender, args);
-        var rotation = Objects.requireNonNull((Rotation) args.get("rotation"));
-        this.turn(fake, rotation.getYaw(), rotation.getPitch());
+        runForFakeWithSuccess(sender, fake, () -> {
+            var rotation = Objects.requireNonNull((Rotation) args.get("rotation"));
+            this.turn(fake, rotation.getYaw(), rotation.getPitch());
+        });
     }
 
     /**

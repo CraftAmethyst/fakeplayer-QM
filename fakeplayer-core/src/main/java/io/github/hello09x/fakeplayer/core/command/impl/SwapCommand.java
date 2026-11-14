@@ -14,7 +14,9 @@ public class SwapCommand extends AbstractCommand {
      */
     public void swap(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = super.getFakeplayer(sender, args);
-        bridge.fromPlayer(fake).swapItemWithOffhand();
+        runForFakeWithSuccess(sender, fake, () -> {
+            bridge.fromPlayer(fake).swapItemWithOffhand();
+        });
     }
 
 }

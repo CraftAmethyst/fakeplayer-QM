@@ -67,6 +67,23 @@ public class FakeplayerFeatureManager {
         return configs;
     }
 
+    public java.util.concurrent.CompletableFuture<Map<Feature, FeatureInstance>> getFeaturesAsync(CommandSender sender) {
+        var id = sender instanceof Player player ? player.getUniqueId() : null;
+        var defaults = config.snapshot().defaultFeatures();
+        var permissions = new java.util.EnumMap<Feature, Boolean>(Feature.class);
+        for (var key : Feature.values()) permissions.put(key, key.testPermissions(sender));
+        return io.github.hello09x.fakeplayer.core.Main.getScheduler().async(() -> {
+            var saved = id == null ? Map.<Feature, UserConfig>of() : repository.selectByPlayerId(id).stream().collect(Collectors.toMap(UserConfig::key, Function.identity()));
+            var features = new java.util.EnumMap<Feature, FeatureInstance>(Feature.class);
+            for (var key : Feature.values()) {
+                var fallback = Optional.ofNullable(defaults.get(key)).filter(key.getOptions()::contains).orElse(key.getDefaultOption());
+                var value = permissions.get(key) && saved.containsKey(key) ? saved.get(key).value() : fallback;
+                features.put(key, new FeatureInstance(key, value));
+            }
+            return Map.copyOf(features);
+        });
+    }
+
     public void setFeature(@NotNull Player player, @NotNull Feature key, @NotNull String value) {
         this.repository.saveOrUpdate(new UserConfig(
                 null,

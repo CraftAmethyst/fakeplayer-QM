@@ -32,7 +32,7 @@ layout.buildDirectory.set(file("${rootDir}/target"))
 tasks.named<ShadowJar>("shadowJar") {
     archiveBaseName.set("fakeplayer")
     archiveVersion.set(project.version.toString())
-    archiveClassifier.set("")
+    archiveClassifier.set(providers.gradleProperty("foliaDevelopment").map { if (it.toBoolean()) "folia-dev" else "" }.orElse(""))
 }
 tasks.named<Jar>("jar") { enabled = false }
 tasks.named("build") { dependsOn(tasks.named("shadowJar")) }

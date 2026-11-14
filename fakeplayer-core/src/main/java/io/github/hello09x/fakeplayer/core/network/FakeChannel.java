@@ -13,8 +13,8 @@ public class FakeChannel extends AbstractChannel {
     private final ChannelConfig config = new DefaultChannelConfig(this);
     private final ChannelPipeline pipeline = new FakeChannelPipeline(this);
     private final InetAddress address;
-    private boolean open = true;
-    private boolean active = true;
+    private volatile boolean open = true;
+    private volatile boolean active = true;
 
     public FakeChannel(@Nullable Channel parent, @NotNull InetAddress address) {
         super(parent);

@@ -1,7 +1,6 @@
 package io.github.hello09x.fakeplayer.core.util;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
-import io.github.hello09x.devtools.core.utils.SchedulerUtils;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,6 +18,11 @@ public class Skins {
      * @return 是否复制成功
      */
     public static boolean copySkin(@NotNull OfflinePlayer from, @NotNull Player to) {
+        var scheduler = io.github.hello09x.fakeplayer.core.Main.getScheduler();
+        var source = from.getPlayer();
+        if (scheduler.isFolia() && (!scheduler.owns(to) || source != null && !scheduler.owns(source))) {
+            throw new IllegalStateException("Use copySkinFromMojang for cross-region skin copies");
+        }
         var profile = from.getPlayerProfile();
         if (profile.hasTextures()) {
             copyTexture(profile, to);
@@ -34,24 +38,19 @@ public class Skins {
      * @param to   复制到
      */
     public static CompletableFuture<Boolean> copySkinFromMojang(@NotNull JavaPlugin plugin, @NotNull OfflinePlayer from, @NotNull Player to) {
-        if (copySkin(from, to)) {
-            return CompletableFuture.completedFuture(true);
-        }
-
-        var profile = from.getPlayerProfile();
-        return CompletableFuture
-                .supplyAsync(profile::complete)
-                .thenComposeAsync(completed -> SchedulerUtils.runTask(plugin, () -> {
-                    if (!completed) {
-                        return false;
-                    }
-                    try {
-                        copyTexture(profile, to);
-                        return true;
-                    } catch (Throwable e) {
-                        return false;
-                    }
-                }));
+        var scheduler = io.github.hello09x.fakeplayer.core.Main.getScheduler();
+        var source = from.getPlayer();
+        CompletableFuture<PlayerProfile> captured = source == null
+                ? scheduler.async(from::getPlayerProfile)
+                : scheduler.callEntity(source, () -> (PlayerProfile) source.getPlayerProfile().clone());
+        return captured.thenCompose(profile -> {
+            var completed = profile.hasTextures() ? CompletableFuture.completedFuture(true) : scheduler.async(profile::complete);
+            return completed.thenCompose(success -> scheduler.callEntity(to, () -> {
+                if (!success || !to.isOnline()) return false;
+                copyTexture(profile, to);
+                return true;
+            }));
+        });
     }
 
     private static void copyTexture(@NotNull PlayerProfile from, @NotNull Player to) {

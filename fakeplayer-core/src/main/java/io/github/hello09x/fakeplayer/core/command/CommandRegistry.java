@@ -169,7 +169,7 @@ public class CommandRegistry {
                                 .withRequirement(CommandSupports::hasFakeplayerForRespawn)
                                 .withShortDescription("fakeplayer.command.respawn.description")
                                 .withPermission(Permission.respawn)
-                                .withOptionalArguments(fakeplayer("name", Entity::isDead))
+                                .withOptionalArguments(fakeplayer("name", CommandSupports::isDeadSnapshot))
                                 .executes(respawnCommand::respawn),
                         command("set")
                                 .withRequirement(CommandSupports::hasFakeplayer)

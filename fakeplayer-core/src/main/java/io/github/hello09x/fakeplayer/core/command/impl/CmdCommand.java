@@ -56,32 +56,34 @@ public class CmdCommand extends AbstractCommand {
 
         var name = command.getName();
         if (!sender.hasPermission(Permission.cmd) && !config.getAllowCommands().contains(name)) {
-            sender.sendMessage(translatable("fakeplayer.command.cmd.error.no-permission", RED));
+            reply(sender, translatable("fakeplayer.command.cmd.error.no-permission", RED));
             return;
         }
 
         if (!sender.isOp() && (name.equals("fakeplayer") || name.equals("fp"))) {
-            sender.sendMessage(translatable("fakeplayer.command.cmd.error.no-permission", RED));
+            reply(sender, translatable("fakeplayer.command.cmd.error.no-permission", RED));
             return;
         }
 
+        runForFake(sender, fake, () -> {
         if (!command.testPermission(fake)) {
-            sender.sendMessage(translatable("fakeplayer.command.cmd.error.fakeplayer-has-no-permission", text(fake.getName())).color(RED));
+            reply(sender, translatable("fakeplayer.command.cmd.error.fakeplayer-has-no-permission", text(fake.getName())).color(RED));
             return;
         }
 
         var commandArgs = Arrays.copyOfRange(rawArgs, 1, rawArgs.length);
         if (!command.execute(fake, commandLabel, commandArgs)) {
-            sender.sendMessage(translatable("fakeplayer.command.cmd.error.execute-failed", RED));
+            reply(sender, translatable("fakeplayer.command.cmd.error.execute-failed", RED));
             return;
         }
 
-        sender.sendMessage(translatable(
+        reply(sender, translatable(
                 "fakeplayer.command.generic.success",
                 GRAY
         ));
 
         log.info("%s issued server command: %s".formatted(fake.getName(), stringifyCommand(command, commandArgs)));
+        });
     }
 
 }

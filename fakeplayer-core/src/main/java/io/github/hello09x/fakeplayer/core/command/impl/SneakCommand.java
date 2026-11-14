@@ -14,13 +14,15 @@ public class SneakCommand extends AbstractCommand {
      */
     public void sneak(@NotNull CommandSender sender, @NotNull CommandArguments args) throws WrapperCommandSyntaxException {
         var fake = getFakeplayer(sender, args);
-        var sneaking = args
-                .getOptional("sneaking")
-                .map(String.class::cast)
-                .map(Boolean::valueOf)
-                .orElse(!fake.isSneaking());
+        runForFakeWithSuccess(sender, fake, () -> {
+            var sneaking = args
+                    .getOptional("sneaking")
+                    .map(String.class::cast)
+                    .map(Boolean::valueOf)
+                    .orElse(!fake.isSneaking());
 
-        fake.setSneaking(sneaking);
+            fake.setSneaking(sneaking);
+        });
     }
 
 }

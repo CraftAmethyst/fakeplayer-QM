@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class WildFakeplayerManager implements PluginMessageListener {
 
     private final static Logger log = Main.getInstance().getLogger();
-    private final static boolean IS_BUNGEECORD = Bukkit.getServer().getServerConfig().isProxyEnabled();
+    private final static boolean IS_BUNGEECORD = io.github.hello09x.fakeplayer.core.platform.ProxySupport.isEnabled();
     private final static String CHANNEL = "BungeeCord";
     private final static String SUB_CHANNEL = "PlayerList";
 
@@ -33,13 +33,13 @@ public class WildFakeplayerManager implements PluginMessageListener {
 
     private final FakeplayerManager manager;
     private final FakeplayerConfig config;
-    private final Map<String, AtomicInteger> offline = new HashMap<>();
+    private final Map<String, AtomicInteger> offline = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Inject
     public WildFakeplayerManager(FakeplayerManager manager, FakeplayerConfig config) {
         this.manager = manager;
         this.config = config;
-        Bukkit.getScheduler().runTaskTimer(Main.getInstance(), this::cleanup, 0, CLEANUP_PERIOD);
+        Main.getScheduler().globalTimer(this::cleanup, 1, CLEANUP_PERIOD);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class WildFakeplayerManager implements PluginMessageListener {
         var players = new HashSet<String>();
         players.addAll(Arrays.asList(in.readUTF().split(", ")));
         players.addAll(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
-        this.cleanup0(players);
+        Main.getScheduler().runGlobal(() -> this.cleanup0(players));
     }
 
     /**
@@ -141,11 +141,10 @@ public class WildFakeplayerManager implements PluginMessageListener {
         var out = ByteStreams.newDataOutput();
         out.writeUTF(SUB_CHANNEL);
         out.writeUTF("ALL");
-        recipient.sendPluginMessage(
-                Main.getInstance(),
-                CHANNEL,
-                out.toByteArray()
-        );
+        var message = out.toByteArray();
+        Main.getScheduler().runEntity(recipient, () -> {
+            if (recipient.isOnline()) recipient.sendPluginMessage(Main.getInstance(), CHANNEL, message);
+        });
     }
 
 }

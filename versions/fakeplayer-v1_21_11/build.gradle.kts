@@ -8,10 +8,8 @@ extensions.configure<NmsConventionExtension>("fakeplayerNms") {
     javaVersion.set(21)
     toolchainVersion.set(21)
     nmsVersion.set("1.21.11-R0.1-SNAPSHOT")
-    lombok.set(false)
+    lombok.set(true)
     coreProvided.set(true)
-    dependsOn.set(":fakeplayer-v1_21_9")
-    transitive.set(false)
 }
 
 dependencies {

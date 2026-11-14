@@ -3,7 +3,6 @@ package io.github.hello09x.fakeplayer.v1_21_11.spi;
 import io.github.hello09x.fakeplayer.api.spi.*;
 import io.github.hello09x.fakeplayer.core.Main;
 import io.github.hello09x.fakeplayer.core.util.VersionUtils;
-import io.github.hello09x.fakeplayer.v1_21_9.spi.*;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;

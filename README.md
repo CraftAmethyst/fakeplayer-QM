@@ -1,5 +1,7 @@
 # FakePlayer - QM
 
+**Version: 0.4.2**
+
 A fork of FakePlayer maintained by CraftAmethyst.
 
 ![BANNER_IMAGE](.github/README/BANNER.png)
@@ -7,6 +9,14 @@ A fork of FakePlayer maintained by CraftAmethyst.
 English | [简体中文](README_zh.md)
 
 This is a server side plugin inspired by [Carpet-Mod](https://github.com/gnembon/fabric-carpet) for Minecraft `1.20.x`, `1.21.x`, `26.1.x`, `26.2`, and `26.3`.
+
+## Supported Versions
+
+| Server software | Minecraft versions | Support status |
+| --------------- | ------------------ | -------------- |
+| Paper | 1.20.x, 1.21.x, 26.1.x, 26.2, 26.3 | Supported |
+| Purpur | 1.20.x, 1.21.x, 26.1.x, 26.2, 26.3 | Supported |
+| Folia | 1.21.4, 1.21.5, 1.21.6, 1.21.8, 1.21.11, 26.1.x, 26.2, 26.3 | Experimental |
 
 [Click me](https://youtu.be/NePaDz-P5nI) to visit a demo video.
 
@@ -25,7 +35,7 @@ This is a server side plugin inspired by [Carpet-Mod](https://github.com/gnembon
 
 ## Requirements
 
-+ [Paper](https://papermc.io) or [Purpur](http://purpurmc.org) software
++ Paper or Purpur are supported; Folia is experimental
 + [CommandAPI](https://commandapi.jorel.dev) Plugin (Any version **except** `10.0.0`)
 + Java 21 for Minecraft 1.20.x through 26.1.x; Java 25 for Minecraft 26.2 and 26.3
 

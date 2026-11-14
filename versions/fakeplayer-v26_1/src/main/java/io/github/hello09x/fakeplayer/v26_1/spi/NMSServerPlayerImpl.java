@@ -250,6 +250,14 @@ public class NMSServerPlayerImpl implements NMSServerPlayer {
     }
 
     @Override
+    public java.util.concurrent.CompletableFuture<Void> respawnAsync() {
+        if (io.github.hello09x.fakeplayer.core.Main.getScheduler().isFolia()) {
+            return io.github.hello09x.fakeplayer.core.platform.FoliaLifecycleHooks.respawn(player);
+        }
+        return NMSServerPlayer.super.respawnAsync();
+    }
+
+    @Override
     public void respawn() {
         if (!this.player.isDead()) {
             return;

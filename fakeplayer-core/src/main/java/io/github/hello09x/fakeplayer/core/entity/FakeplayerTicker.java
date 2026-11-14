@@ -5,10 +5,21 @@ import io.github.hello09x.fakeplayer.core.Main;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerManager;
 import io.github.hello09x.fakeplayer.core.util.FakeplayerFeatureUtils;
 import org.bukkit.Location;
-import org.bukkit.scheduler.BukkitRunnable;
+import io.github.hello09x.fakeplayer.core.platform.TaskHandle;
 import org.jetbrains.annotations.NotNull;
 
-public class FakeplayerTicker extends BukkitRunnable {
+public class FakeplayerTicker implements Runnable {
+
+    private TaskHandle task;
+
+    public void start() {
+        if (task != null) throw new IllegalStateException("Ticker already started");
+        task = Main.getScheduler().entityTimer(player.getPlayer(), this, 1, 1);
+    }
+
+    public void cancel() {
+        if (task != null) task.cancel();
+    }
 
     public final static long NON_REMOVE_AT = -1;
 
@@ -37,14 +48,15 @@ public class FakeplayerTicker extends BukkitRunnable {
 
     @Override
     public void run() {
+        if (player.getState() == Fakeplayer.State.MIGRATING) return;
         if (!player.isOnline()) {
-            super.cancel();
+            cancel();
             return;
         }
 
         if (this.removeAt != NON_REMOVE_AT && this.player.getTickCount() % 20 == 0 && System.currentTimeMillis() > removeAt) {
             Main.getInjector().getInstance(FakeplayerManager.class).remove(player.getName(), "lifespan ends");
-            super.cancel();
+            cancel();
             return;
         }
 
@@ -57,6 +69,9 @@ public class FakeplayerTicker extends BukkitRunnable {
         } else {
             this.doTick();
         }
+        Main.getInjector().getInstance(io.github.hello09x.fakeplayer.core.manager.action.ActionManager.class).tick(player.getPlayer());
+        Main.getInjector().getInstance(FakeplayerManager.class).publishDead(player.getPlayer());
+        Main.getInjector().getInstance(io.github.hello09x.fakeplayer.core.manager.PersistentFakeplayerManager.class).capture(player.getPlayer());
     }
 
     /**
@@ -65,6 +80,11 @@ public class FakeplayerTicker extends BukkitRunnable {
      * <p>似乎是 clearfog 或者 multiverse 插件导致的</p>
      */
     private void doFirstTick() {
+        if (Main.getScheduler().isFolia()) {
+            this.doTick();
+            this.firstTick = false;
+            return;
+        }
         var handle = this.player.getHandle();
         var player = this.player.getPlayer();
         var x = handle.getX();
@@ -80,7 +100,11 @@ public class FakeplayerTicker extends BukkitRunnable {
         handle.doTick();
 
         // clearFog 插件会在第一次传送的时候改变了玩家的位置, 因此必须进行一次传送
-        player.teleport(new Location(player.getWorld(), x, y, z, player.getLocation().getYaw(), player.getLocation().getPitch()));
+        // A restored vehicle is already on the final spawn location. Teleporting
+        // its passenger here would immediately undo attachment restoration.
+        if (!player.isInsideVehicle()) {
+            player.teleport(new Location(player.getWorld(), x, y, z, player.getLocation().getYaw(), player.getLocation().getPitch()));
+        }
         handle.absMoveTo(x, y, z, player.getLocation().getYaw(), player.getLocation().getPitch());
         this.firstTick = false;
     }

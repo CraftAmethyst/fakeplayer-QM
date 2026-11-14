@@ -60,9 +60,11 @@ public class FakeplayerAutofishManager implements Listener {
             return;
         }
 
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+        Main.getScheduler().entityLater(player, () -> {
+            if (!player.isOnline() || !isAutofish(player)) return;
             actionManager.setAction(player, ActionType.USE, ActionSetting.once());
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            Main.getScheduler().entityLater(player, () -> {
+                if (!player.isOnline() || !isAutofish(player)) return;
                 actionManager.setAction(player, ActionType.USE, ActionSetting.once());
             }, Ticks.TICKS_PER_SECOND);
         }, 1);

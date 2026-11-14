@@ -8,6 +8,12 @@ import org.jetbrains.annotations.NotNull;
 
 public interface NMSServerPlayer {
 
+    /** Completes after the respawn has finished; platform implementations may be asynchronous. */
+    default java.util.concurrent.CompletableFuture<Void> respawnAsync() {
+        respawn();
+        return java.util.concurrent.CompletableFuture.completedFuture(null);
+    }
+
     /**
      * @return 返回 bukkit 的 Player 对象
      */

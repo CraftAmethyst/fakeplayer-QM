@@ -22,3 +22,8 @@ gradle-app.setting
 .idea
 work
 target
+
+# Isolated local server runtimes, downloaded dependencies and generated worlds
+/test-servers/
+/folia/
+/scripts/

@@ -11,7 +11,6 @@ import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutofishManager;
 import io.github.hello09x.fakeplayer.core.manager.action.ActionManager;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.jetbrains.annotations.NotNull;
 
 import static net.kyori.adventure.text.Component.translatable;
@@ -42,18 +41,20 @@ public class ActionCommand extends AbstractCommand {
             @NotNull ActionSetting setting
     ) throws WrapperCommandSyntaxException {
         var fake = super.getFakeplayer(sender, args);
-        if (action == ActionType.USE
-                && fake.getInventory().getItemInMainHand().getType() == Material.FISHING_ROD
-                && autofishManager.isAutofish(fake)
-        ) {
-            // 如果是自动钓鱼则改为 1 次
-            setting = ActionSetting.once();
-        }
+        var requested = setting;
+        runForFake(sender, fake, () -> {
+            var effective = requested;
+            if (action == ActionType.USE
+                    && fake.getInventory().getItemInMainHand().getType() == Material.FISHING_ROD
+                    && autofishManager.isAutofish(fake)
+            ) {
+                // 如果是自动钓鱼则改为 1 次
+                effective = ActionSetting.once();
+            }
 
-        actionManager.setAction(fake, action, setting);
-        if (!setting.equals(ActionSetting.once()) || sender instanceof ConsoleCommandSender) {
-            sender.sendMessage(translatable("fakeplayer.command.generic.success"));
-        }
+            actionManager.setAction(fake, action, effective);
+            reply(sender, translatable("fakeplayer.command.generic.success"));
+        });
     }
 
 }

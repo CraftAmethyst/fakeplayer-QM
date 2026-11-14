@@ -31,7 +31,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 public class SpawnCommand extends AbstractCommand {
 
     private final static DateTimeFormatter REMOVE_AT_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
-    private final static BukkitScheduler scheduler = Bukkit.getScheduler();
+
 
     private static String toLocationString(@NotNull Location location) {
         return location.getWorld().getName()
@@ -70,7 +70,7 @@ public class SpawnCommand extends AbstractCommand {
 
         var removedAt = Optional.ofNullable(config.getLifespan()).map(lifespan -> LocalDateTime.now().plus(lifespan)).orElse(null);
         manager.spawnAsync(sender, name, spawnpoint, Optional.ofNullable(config.getLifespan()).map(Duration::toMillis).orElse(FakeplayerTicker.NON_REMOVE_AT))
-                .thenAcceptAsync(player -> {
+                .thenAccept(player -> {
                     if (player == null) {
                         return;
                     }
@@ -89,8 +89,8 @@ public class SpawnCommand extends AbstractCommand {
                                 text(REMOVE_AT_FORMATTER.format(removedAt))
                         ).color(GRAY);
                     }
-                    scheduler.runTask(Main.getInstance(), () -> {
-                        sender.sendMessage(message);
+                    Main.getScheduler().sender(sender, () -> {
+                        reply(sender, message);
                         if (sender instanceof Player p && manager.countByCreator(sender) == 1) {
                             // 有些命令在有假人的时候才会显示, 因此需要强制刷新一下
                             p.updateCommands();
@@ -98,9 +98,9 @@ public class SpawnCommand extends AbstractCommand {
                     });
                 }).exceptionally(e -> {
                     if (Throwables.getRootCause(e) instanceof CommandException ce) {
-                        scheduler.runTask(Main.getInstance(), () -> sender.sendMessage(ce.component()));
+                        Main.getScheduler().sender(sender, () -> reply(sender, ce.component()));
                     } else {
-                        scheduler.runTask(Main.getInstance(), () -> sender.sendMessage(translatable("fakeplayer.command.spawn.error.unknown", RED)));
+                        Main.getScheduler().sender(sender, () -> reply(sender, translatable("fakeplayer.command.spawn.error.unknown", RED)));
                         log.severe(Throwables.getStackTraceAsString(e));
                     }
                     return null;

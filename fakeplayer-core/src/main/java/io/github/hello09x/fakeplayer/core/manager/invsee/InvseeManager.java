@@ -10,6 +10,10 @@ import org.jetbrains.annotations.NotNull;
  **/
 public interface InvseeManager extends Listener {
 
+    default java.util.concurrent.CompletableFuture<Boolean> invseeAsync(Player viewer, Player whom) {
+        return java.util.concurrent.CompletableFuture.completedFuture(invsee(viewer, whom));
+    }
+
     boolean invsee(@NotNull Player viewer, @NotNull Player whom);
 
 }

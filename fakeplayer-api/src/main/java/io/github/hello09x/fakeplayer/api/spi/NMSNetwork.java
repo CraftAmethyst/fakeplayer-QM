@@ -6,6 +6,17 @@ import org.jetbrains.annotations.NotNull;
 
 public interface NMSNetwork {
 
+    /** Platform placement may need already decoded player data, without performing disk IO. */
+    default NMSServerGamePacketListener placeNewPlayer(Server server, Player player, Object savedData) {
+        return placeNewPlayer(server, player);
+    }
+
+    /** Release a virtual transport after removal or a failed join. */
+    default void close() {}
+
+    /** Close only the transport. Folia's existing region loop must finish native removal. */
+    default void requestDisconnect() { close(); }
+
     /**
      * 绑定一个虚拟的游戏连接
      *

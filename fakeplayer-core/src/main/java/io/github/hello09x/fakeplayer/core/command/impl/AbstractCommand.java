@@ -24,6 +24,31 @@ import static net.kyori.adventure.text.Component.translatable;
 
 public abstract class AbstractCommand {
 
+    protected void runForFake(CommandSender sender, Player player, Runnable action) {
+        runForFake(sender, player, action, null);
+    }
+
+    protected void runForFakeWithSuccess(CommandSender sender, Player player, Runnable action) {
+        runForFake(sender, player, action, translatable("fakeplayer.command.generic.success"));
+    }
+
+    private void runForFake(CommandSender sender, Player player, Runnable action, net.kyori.adventure.text.Component successMessage) {
+        Main.getScheduler().runEntity(player, () -> {
+            if (!player.isOnline()) throw new IllegalStateException("Fakeplayer is offline");
+            action.run();
+        }).thenRun(() -> {
+            if (successMessage != null) reply(sender, successMessage);
+        }).exceptionally(error -> {
+            log.log(java.util.logging.Level.WARNING, "Fakeplayer command failed", error);
+            reply(sender, translatable("fakeplayer.command.generic.error.operation-failed"));
+            return null;
+        });
+    }
+
+    protected static void reply(CommandSender sender, net.kyori.adventure.text.Component message) {
+        Main.getScheduler().sender(sender, () -> sender.sendMessage(message));
+    }
+
     protected final static Logger log = Main.getInstance().getLogger();
 
     @Inject

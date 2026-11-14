@@ -1,111 +1,104 @@
 package io.github.hello09x.fakeplayer.core.manager.action;
 
-import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.github.hello09x.fakeplayer.api.spi.ActionSetting;
-import io.github.hello09x.fakeplayer.api.spi.ActionTicker;
-import io.github.hello09x.fakeplayer.api.spi.ActionType;
-import io.github.hello09x.fakeplayer.api.spi.NMSBridge;
+import io.github.hello09x.fakeplayer.api.spi.*;
 import io.github.hello09x.fakeplayer.core.Main;
-import org.bukkit.Bukkit;
+import io.github.hello09x.fakeplayer.core.platform.TaskHandle;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 @Singleton
 public class ActionManager {
-
-    private final static Logger log = Main.getInstance().getLogger();
-
-    private final Map<UUID, Map<ActionType, ActionTicker>> managers = new HashMap<>();
-
+    private final Map<UUID, PlayerActions> managers = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<ActionType>> snapshots = new ConcurrentHashMap<>();
     private final NMSBridge bridge;
 
-
     @Inject
-    public ActionManager(NMSBridge bridge) {
-        this.bridge = bridge;
-        Bukkit.getScheduler().runTaskTimer(Main.getInstance(), this::tick, 0, 1);
-    }
+    public ActionManager(NMSBridge bridge) { this.bridge = bridge; }
 
-    public boolean hasActiveAction(
-            @NotNull Player player,
-            @NotNull ActionType action
-    ) {
-        return Optional.ofNullable(this.managers.get(player.getUniqueId()))
-                .map(manager -> manager.get(action))
-                .filter(ac -> ac.getSetting().remains != 0)
-                .isPresent();
+    public boolean hasActiveAction(@NotNull Player player, @NotNull ActionType action) {
+        return getActiveActions(player).contains(action);
     }
 
     public @NotNull @Unmodifiable Set<ActionType> getActiveActions(@NotNull Player player) {
-        var manager = this.managers.get(player.getUniqueId());
-        if (manager == null || managers.isEmpty()) {
-            return Collections.emptySet();
-        }
-
-        return manager.entrySet()
-                .stream()
-                .filter(actions -> actions.getValue().getSetting().remains != 0)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+        return snapshots.getOrDefault(player.getUniqueId(), Set.of());
     }
 
-    public void setAction(
-            @NotNull Player player,
-            @NotNull ActionType action,
-            @NotNull ActionSetting setting
-    ) {
-        var managers = this.managers.computeIfAbsent(player.getUniqueId(), key -> new HashMap<>());
-        managers.put(action, bridge.createAction(player, action, setting));
+    public void setAction(@NotNull Player player, @NotNull ActionType action, @NotNull ActionSetting setting) {
+        Main.getScheduler().runEntity(player, () -> {
+            var state = managers.computeIfAbsent(player.getUniqueId(), ignored -> new PlayerActions(player));
+            var previous = state.actions.remove(action);
+            if (previous != null) previous.stop();
+            state.actions.put(action, bridge.createAction(player, action, setting));
+            state.publish();
+
+        });
     }
 
     public void stop(@NotNull Player player) {
-        var managers = this.managers.get(player.getUniqueId());
-        if (managers == null || managers.isEmpty()) {
-            return;
-        }
-
-        for (var entry : managers.entrySet()) {
-            if (!entry.getValue().equals(ActionSetting.stop())) {
-                entry.setValue(bridge.createAction(player, entry.getKey(), ActionSetting.stop()));
-            }
-        }
+        Main.getScheduler().runEntity(player, () -> stopOwned(player));
     }
 
+    /** Called during native quit on the owner, even after plugin schedulers close. */
+    public void stopOwned(Player player) {
+        var state = managers.get(player.getUniqueId());
+        if (state != null) state.stop();
+    }
+
+    public void tick(Player player) {
+        var state = managers.get(player.getUniqueId());
+        if (state != null) state.tick();
+    }
+
+    /** Legacy entry point. Each player is dispatched to its owning region. */
     public void tick() {
-        var itr = managers.entrySet().iterator();
-        while (itr.hasNext()) {
-            var entry = itr.next();
-            var player = Bukkit.getPlayer(entry.getKey());
-
-            if (player == null || !player.isValid()) {
-                // 假人下线或者死亡
-                itr.remove();
-                for (var ticker : entry.getValue().values()) {
-                    ticker.stop();
-                }
-                continue;
-            }
-
-            // do tick
-            entry.getValue().values().removeIf(ticker -> {
-                try {
-                    return ticker.tick();
-                } catch (Throwable e) {
-                    log.warning(Throwables.getStackTraceAsString(e));
-                    return false;
-                }
-            });
-            if (entry.getValue().isEmpty()) {
-                itr.remove();
-            }
-        }
+        managers.values().forEach(state -> Main.getScheduler().runEntity(state.player, state::tick));
     }
 
+    private void discard(UUID uuid, PlayerActions state) {
+        if (managers.remove(uuid, state)) snapshots.remove(uuid);
+    }
+
+    private final class PlayerActions {
+        private final Player player;
+        private final Map<ActionType, ActionTicker> actions = new EnumMap<>(ActionType.class);
+        private TaskHandle task;
+
+        private PlayerActions(Player player) { this.player = player; }
+
+        private void publish() {
+            var active = EnumSet.noneOf(ActionType.class);
+            actions.forEach((type, ticker) -> { if (ticker.getSetting().remains != 0) active.add(type); });
+            snapshots.put(player.getUniqueId(), Set.copyOf(active));
+        }
+
+        private void tick() {
+            if (!player.isOnline() || !player.isValid()) { stop(); return; }
+            // Tickers may re-enter the manager. Iterate a snapshot and remove by identity.
+            for (var entry : new EnumMap<>(actions).entrySet()) {
+                if (actions.get(entry.getKey()) != entry.getValue()) continue;
+                try {
+                    if (entry.getValue().tick()) actions.remove(entry.getKey(), entry.getValue());
+                } catch (Throwable exception) {
+                    Main.getInstance().getLogger().log(Level.WARNING, "Fakeplayer action failed", exception);
+                }
+            }
+            publish();
+            if (actions.isEmpty()) stop();
+        }
+
+        private void stop() {
+            var stopped = new ArrayList<>(actions.values());
+            actions.clear();
+            discard(player.getUniqueId(), this);
+            if (task != null) task.cancel();
+            stopped.forEach(ActionTicker::stop);
+        }
+    }
 }

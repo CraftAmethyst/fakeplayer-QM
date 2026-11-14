@@ -179,6 +179,8 @@ public abstract class CommandSupports {
         })));
     }
 
+    public static boolean isDeadSnapshot(Player player) { return manager.isDeadSnapshot(player); }
+
     public static boolean hasFakeplayerForRespawn(@NotNull CommandSender sender) {
         if (config.isKickOnDead()) {
             return false;
