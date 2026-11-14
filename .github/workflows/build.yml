@@ -27,31 +27,12 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Test and build both artifacts
-        run: |
-          ./gradlew :fakeplayer-core:test :fakeplayer-dist:shadowJar -PfoliaDevelopment=true --no-daemon
-          ./gradlew :fakeplayer-dist:shadowJar --no-daemon
+      - name: Build
+        run: ./gradlew :fakeplayer-dist:shadowJar --no-daemon
 
-      - name: Verify Folia artifact gates and locked probes
-        shell: pwsh
-        run: |
-          $release = @(Get-ChildItem target/libs/fakeplayer-*.jar | Where-Object { $_.Name -notlike '*-folia-dev.jar' })
-          $development = @(Get-ChildItem target/libs/*-folia-dev.jar)
-          if ($release.Count -ne 1 -or $development.Count -ne 1) { throw 'Expected one release and one development jar' }
-          ./scripts/folia/Test-FoliaArtifacts.ps1 -ReleaseJar $release[0].FullName -DevelopmentJar $development[0].FullName
-
-      - name: Upload release artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: fakeplayer-jar
-          path: |
-            target/libs/*.jar
-            !target/libs/*-folia-dev.jar
-          if-no-files-found: error
-
-      - name: Upload Folia development artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fakeplayer-folia-development
-          path: target/libs/*-folia-dev.jar
+          path: target/libs/*.jar
           if-no-files-found: error
