@@ -1,6 +1,6 @@
 # FakePlayer - QM
 
-**Version: 0.4.2**
+**Version: 0.4.3-pre**
 
 A fork of FakePlayer maintained by CraftAmethyst.
 

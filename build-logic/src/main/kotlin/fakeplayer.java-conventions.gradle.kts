@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.hello09x.fakeplayer"
-version = providers.gradleProperty("revision").orElse("0.4.2").get()
+version = providers.gradleProperty("revision").orElse("0.4.3-pre").get()
 
 repositories {
     flatDir { dirs("${rootDir}/lib") }

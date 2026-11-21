@@ -35,6 +35,7 @@ dependencies {
 }
 
 tasks.named<ProcessResources>("processResources") {
+    inputs.property("revision", project.version.toString())
     inputs.property("foliaSupported", providers.gradleProperty("foliaSupported").orElse("false"))
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {

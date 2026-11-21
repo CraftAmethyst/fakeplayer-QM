@@ -1,6 +1,6 @@
 # FakePlayer - 假人插件
 
-**版本：0.4.2**
+**版本：0.4.3-pre**
 
 由 CraftAmethyst 维护的一个 FakePlayer 的分叉
 
