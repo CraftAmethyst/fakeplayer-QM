@@ -14,6 +14,7 @@ import io.github.hello09x.fakeplayer.core.listener.PlayerListener;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutofishManager;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerAutosleepManager;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerManager;
+import io.github.hello09x.fakeplayer.core.manager.FakeplayerMenu;
 import io.github.hello09x.fakeplayer.core.manager.FakeplayerReplenishManager;
 import io.github.hello09x.fakeplayer.core.manager.PersistentFakeplayerManager;
 import io.github.hello09x.fakeplayer.core.manager.WildFakeplayerManager;
@@ -100,6 +101,7 @@ public final class Main extends JavaPlugin {
             manager.registerEvents(injector.getInstance(FakeplayerAutofishManager.class), this);
             manager.registerEvents(injector.getInstance(FakeplayerAutosleepManager.class), this);
             manager.registerEvents(injector.getInstance(FakeplayerReplenishManager.class), this);
+            manager.registerEvents(injector.getInstance(FakeplayerMenu.class), this);
             manager.registerEvents(injector.getInstance(InvseeManager.class), this);
             manager.registerEvents(injector.getInstance(io.github.hello09x.fakeplayer.core.manager.invsee.InventoryEditor.class), this);
             manager.registerEvents(injector.getInstance(io.github.hello09x.fakeplayer.core.manager.TransferMailbox.class), this);
